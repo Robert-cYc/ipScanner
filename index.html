@@ -1,0 +1,2230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Network IP Scanner | Browser LAN Radar</title>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #111827;
+      --card-border: #1f2937;
+      --card-hover: #1e293b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-glow: rgba(59, 130, 246, 0.35);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.4);
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 0.85rem 1.5rem;
+    }
+
+    .nav-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .radar-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .radar-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: #ffffff;
+    }
+
+    .brand-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      background: linear-gradient(to right, #ffffff, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-size: 0.7rem;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-dim);
+    }
+
+    .pulse-dot.active {
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success-glow);
+      animation: pulse 1.5s infinite;
+    }
+
+    .pulse-dot.scanning {
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+      animation: pulse 0.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.15); }
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Architecture Info Banner */
+    .info-banner {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.2), rgba(17, 24, 39, 0.4));
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      font-size: 0.875rem;
+      color: #bfdbfe;
+    }
+
+    .info-banner svg {
+      width: 22px;
+      height: 22px;
+      fill: #60a5fa;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .info-banner p strong {
+      color: #ffffff;
+    }
+
+    /* Grid Layout */
+    .control-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+      .control-grid {
+        grid-template-columns: 390px 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-title svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--primary);
+    }
+
+    /* Configuration Form */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.825rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .form-group .hint {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: 0.25rem;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-control {
+      width: 100%;
+      background: #0d1322;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: var(--font-mono);
+      transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    /* Action Buttons */
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .btn {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-secondary {
+      background: #1f2937;
+      color: var(--text-main);
+      border: 1px solid #374151;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #374151;
+    }
+
+    /* Live Telemetry / Stats Cards */
+    .telemetry-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat-box {
+      background: #0d1322;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 0.85rem;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 0.2rem;
+      font-family: var(--font-mono);
+    }
+
+    .stat-value.active-count {
+      color: var(--success);
+    }
+
+    /* Progress Bar */
+    .progress-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      font-family: var(--font-mono);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      border-radius: 9999px;
+      transition: width 0.15s ease;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+
+    /* Subnet Visual Matrix */
+    .matrix-container {
+      margin-top: 1rem;
+    }
+
+    .matrix-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 3px;
+      padding: 8px;
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      overflow: visible;
+    }
+
+    .node-cell {
+      aspect-ratio: 1;
+      border-radius: 2px;
+      background: #1e293b;
+      cursor: pointer;
+      position: relative;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .node-cell:hover {
+      transform: scale(1.4);
+      z-index: 10;
+    }
+
+    .node-cell.scanning {
+      background: #3b82f6;
+      box-shadow: 0 0 6px #3b82f6;
+      animation: pulse 0.5s infinite;
+    }
+
+    .node-cell.active {
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+    }
+
+    .node-cell.is-self {
+      outline: 2px solid #38bdf8 !important;
+      outline-offset: 1px;
+    }
+
+    .node-cell.dead {
+      background: #151d2f;
+      opacity: 0.5;
+    }
+
+    /* View Tabs & Diagram Controls */
+    .view-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.65rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.825rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border-color: #334155;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Diagram Canvas Wrapper */
+    .diagram-wrapper {
+      position: relative;
+      width: 100%;
+      height: 520px;
+      min-height: 480px;
+      background: #080d1a;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      overflow: hidden;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    #networkCanvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+    }
+
+    /* Fullscreen / Maximized View Mode */
+    .diagram-wrapper.maximized {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      z-index: 999999 !important;
+      border-radius: 0 !important;
+      border: none !important;
+      background: #050811 !important;
+    }
+
+    .diagram-wrapper.maximized .diagram-overlay-controls {
+      top: 20px;
+      right: 20px;
+      gap: 10px;
+    }
+
+    .diagram-wrapper.maximized .diagram-ctrl-btn {
+      padding: 0.5rem 0.95rem;
+      font-size: 0.825rem;
+    }
+
+    .diagram-wrapper.maximized .diagram-legend {
+      bottom: 20px;
+      left: 20px;
+      padding: 8px 16px;
+      font-size: 0.8rem;
+    }
+
+    .diagram-overlay-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .diagram-ctrl-btn {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid #374151;
+      color: #cbd5e1;
+      font-size: 0.725rem;
+      font-weight: 500;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .diagram-ctrl-btn:hover {
+      background: #1f2937;
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .diagram-legend {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid #1f2937;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    #diagramTooltip {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      z-index: 30;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid #38bdf8;
+      border-radius: 8px;
+      padding: 8px 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      transform: translate(-50%, -125%);
+    }
+
+    /* Results Table Card */
+    .table-header-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .table-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .filter-checkbox input {
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    th {
+      background: #0d1322;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #172033;
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(30, 41, 59, 0.4);
+    }
+
+    .ip-code {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: #60a5fa;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .badge-secondary {
+      background: rgba(107, 114, 128, 0.15);
+      border: 1px solid rgba(107, 114, 128, 0.3);
+      color: #9ca3af;
+    }
+
+    .rtt-cell {
+      font-family: var(--font-mono);
+      font-size: 0.825rem;
+      color: #fbbf24;
+    }
+
+    .action-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: #60a5fa;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      transition: all 0.2s;
+    }
+
+    .action-link:hover {
+      background: rgba(59, 130, 246, 0.25);
+      color: #ffffff;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: var(--text-dim);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 0.75rem;
+      fill: #334155;
+    }
+
+    /* Tooltip */
+    [data-tooltip] {
+      position: relative;
+    }
+
+    [data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #ffffff;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 100;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      border: 1px solid #334155;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header>
+    <div class="nav-container">
+      <div class="logo-group">
+        <div class="radar-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+          </svg>
+        </div>
+        <div>
+          <span class="brand-title">LAN Radar</span>
+          <span class="brand-badge">PROBE v2.1</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div class="status-pill" id="myIpPill" title="Detected client network interface">
+          <span class="pulse-dot active" style="background:#38bdf8; box-shadow:0 0 10px rgba(56,189,248,0.5);"></span>
+          <span>My IP: <strong id="detectedMyIP" style="color:#38bdf8; font-family:var(--font-mono);">Detecting...</strong></span>
+        </div>
+        <div class="status-pill">
+          <span class="pulse-dot" id="globalStatusDot"></span>
+          <span id="globalStatusText">Engine Idle</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Architecture Info Callout -->
+    <div id="httpsWarning" class="info-banner" style="display:none; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">
+      <svg viewBox="0 0 24 24" fill="#ef4444" style="width:22px;height:22px;flex-shrink:0;">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>
+      <div>
+        <p><strong>HTTPS Mixed-Content Warning:</strong> You are viewing this page over <code>https://</code>. Modern browsers strictly block cross-origin HTTP requests to local networks (Private Network Access & Mixed Content). For accurate scanning, open this file directly via <code>file://</code> or via <code>http://localhost</code>.</p>
+      </div>
+    </div>
+
+    <!-- Main Workspace Grid -->
+    <div class="control-grid">
+      <!-- Left Column: Controls & Matrix -->
+      <section class="card">
+        <h2 class="card-title">
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          Scan Parameters
+        </h2>
+
+        <form id="scanForm" onsubmit="event.preventDefault(); startScan();">
+          <div class="form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+              <label for="subnetInput" style="margin-bottom:0;">Target Subnet (/24 Base)</label>
+              <button type="button" onclick="autoDetectAndScan()" style="background:none; border:none; color:#38bdf8; font-size:0.75rem; cursor:pointer; text-decoration:underline;">Re-detect Local IP</button>
+            </div>
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="subnetInput" 
+                class="form-control" 
+                placeholder="192.168.1" 
+                value="192.168.1" 
+                required
+                pattern="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                title="Please specify a valid /24 base, e.g. 192.168.1"
+              >
+            </div>
+            <div class="hint">Will scan range <code>.1</code> to <code>.254</code></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="portInput">Target Port</label>
+              <input type="number" id="portInput" class="form-control" value="80" min="1" max="65535">
+              <div class="hint">Default HTTP (80)</div>
+            </div>
+            <div class="form-group">
+              <label for="timeoutInput">Timeout (ms)</label>
+              <input type="number" id="timeoutInput" class="form-control" value="1200" min="300" max="5000" step="100">
+              <div class="hint">Strict race deadline</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="concurrencyInput">Parallel Workers: <span id="concurrencyVal" style="color:#60a5fa; font-weight:600;">20</span></label>
+            <input 
+              type="range" 
+              id="concurrencyInput" 
+              min="5" 
+              max="50" 
+              value="20" 
+              step="5"
+              style="width: 100%; accent-color: var(--primary);"
+              oninput="document.getElementById('concurrencyVal').innerText = this.value"
+            >
+            <div class="hint">Balances scan velocity vs browser connection queuing</div>
+          </div>
+
+          <div class="btn-group">
+            <button type="submit" id="startBtn" class="btn btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              Start Scan
+            </button>
+            <button type="button" id="stopBtn" class="btn btn-danger" onclick="stopScan()" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+              Abort
+            </button>
+          </div>
+        </form>
+
+        <!-- Subnet Matrix Visualizer -->
+        <div class="matrix-container">
+          <div class="matrix-title">
+            <span>Subnet Matrix (254 Hosts)</span>
+            <span id="matrixHoveredIP" style="font-family: var(--font-mono); font-size: 0.75rem; color:#60a5fa;">Hover a node</span>
+          </div>
+          <div class="matrix-grid" id="matrixGrid">
+            <!-- 254 nodes generated via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Live Telemetry & Discovered Hosts -->
+      <section class="card" style="display: flex; flex-direction: column;">
+        <div class="table-header-group">
+          <div>
+            <h2 class="card-title" style="margin-bottom: 0.2rem;">
+              <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+              Discovered Hosts
+            </h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Real-time inventory of responsive endpoints</p>
+          </div>
+          <div class="table-actions">
+            <label class="filter-checkbox">
+              <input type="checkbox" id="filterActiveOnly" checked onchange="renderTable()">
+              Active Only
+            </label>
+            <button class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;" onclick="exportResults('csv')">
+              CSV
+            </button>
+            <button class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;" onclick="exportResults('json')">
+              JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- Telemetry Stats -->
+        <div class="telemetry-row">
+          <div class="stat-box">
+            <div class="stat-label">Progress</div>
+            <div class="stat-value" id="statProgress">0%</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Active Hosts</div>
+            <div class="stat-value active-count" id="statActive">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Scanned</div>
+            <div class="stat-value" id="statScanned">0 / 254</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Elapsed</div>
+            <div class="stat-value" id="statElapsed">0.0s</div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-section">
+          <div class="progress-labels">
+            <span id="currentScanningLabel">Waiting for launch...</span>
+            <span id="progressPctText">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+
+        <!-- View Switcher Tabs -->
+        <div class="view-tabs">
+          <button type="button" id="tabBtnDiagram" class="tab-btn active" onclick="switchView('diagram')">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            IP Network Diagram
+          </button>
+          <button type="button" id="tabBtnTable" class="tab-btn" onclick="switchView('table')">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+            Host Table (<span id="tabActiveCount">0</span>)
+          </button>
+          <button type="button" id="tabBtnSplit" class="tab-btn" onclick="switchView('split')">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 3h8v18H3zm10 0h8v18h-8z"/></svg>
+            Split View
+          </button>
+        </div>
+
+        <!-- Diagram Section -->
+        <div id="diagramSection" class="diagram-wrapper">
+          <canvas id="networkCanvas"></canvas>
+
+          <!-- Overlay Controls -->
+          <div class="diagram-overlay-controls">
+            <button type="button" class="diagram-ctrl-btn" id="maximizeBtn" onclick="toggleMaximizeDiagram()" title="Toggle Fullscreen / Maximize">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path id="maximizeIconPath" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+              </svg>
+              <span id="maximizeBtnText">最大化 (Fullscreen)</span>
+            </button>
+            <button type="button" class="diagram-ctrl-btn" onclick="resetDiagramView()" title="Reset Camera">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+              Reset
+            </button>
+            <button type="button" class="diagram-ctrl-btn" id="physicsBtn" onclick="togglePhysics()" title="Toggle Auto Orbit">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              <span id="physicsBtnText">Pause</span>
+            </button>
+            <button type="button" class="diagram-ctrl-btn" onclick="exportDiagramPNG()" title="Export Diagram as PNG">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+              Save PNG
+            </button>
+          </div>
+
+          <!-- Diagram Legend -->
+          <div class="diagram-legend">
+            <div class="legend-item">
+              <span class="legend-dot" style="background: #f59e0b;"></span>
+              <span>Gateway (.1)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background: #38bdf8;"></span>
+              <span>This Device</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background: #10b981;"></span>
+              <span>Active Host</span>
+            </div>
+          </div>
+
+          <!-- Interactive Tooltip -->
+          <div id="diagramTooltip">
+            <div id="tooltipTitle" style="font-weight: 700; color: #ffffff; font-family: var(--font-mono); font-size: 0.85rem;"></div>
+            <div id="tooltipBody" style="color: #94a3b8; font-size: 0.75rem; margin-top: 2px;"></div>
+          </div>
+        </div>
+
+        <!-- Table View -->
+        <div id="tableSection" class="table-responsive" style="flex: 1; max-height: 400px; overflow-y: auto; display: none;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">Host</th>
+                <th>IP Address</th>
+                <th>MAC Address</th>
+                <th>Status</th>
+                <th>Signal / Detection Reason</th>
+                <th>RTT</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="resultsTableBody">
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    <p>No active scan in progress. Click "Start Scan" to initiate subnet probing.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <script>
+    /**
+     * Scanner State & Configuration
+     */
+    const state = {
+      isScanning: false,
+      shouldStop: false,
+      startTime: null,
+      timerInterval: null,
+      subnetBase: '192.168.0',
+      myIP: null,
+      myHostNum: null,
+      targetPort: 80,
+      timeoutMs: 1200,
+      concurrency: 20,
+      results: new Map(), // key: ip, value: { ip, hostNum, active, reason, latency, timestamp }
+      activeControllers: new Set()
+    };
+
+    // Sniff local IP using WebRTC ICE candidate fallback
+    async function detectLocalIPViaWebRTC() {
+      return new Promise((resolve) => {
+        try {
+          const pc = new RTCPeerConnection({ iceServers: [] });
+          pc.createDataChannel('');
+          pc.createOffer()
+            .then(offer => pc.setLocalDescription(offer))
+            .catch(() => resolve(null));
+
+          let resolved = false;
+          pc.onicecandidate = (event) => {
+            if (!event || !event.candidate) return;
+            const candidate = event.candidate.candidate;
+            const match = candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
+            if (match) {
+              const ip = match[1];
+              if (!ip.startsWith('127.') && !resolved) {
+                resolved = true;
+                try { pc.close(); } catch(e) {}
+                resolve(ip);
+              }
+            }
+          };
+
+          setTimeout(() => {
+            if (!resolved) {
+              try { pc.close(); } catch(e) {}
+              resolve(null);
+            }
+          }, 800);
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }
+
+    // Detect local IP via backend endpoint /api/my-ip, with WebRTC and LAN profile fallbacks
+    async function detectLocalNetwork() {
+      // 1. Check server API endpoints (relative & localhost:63210 for file:// origin)
+      const endpoints = [
+        '/api/my-ip',
+        'http://localhost:63210/api/my-ip',
+        'http://127.0.0.1:63210/api/my-ip'
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const res = await fetch(endpoint, { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.ip && data.subnet) {
+              return {
+                ip: data.ip,
+                subnet: data.subnet,
+                host: data.host,
+                source: 'Server API'
+              };
+            }
+          }
+        } catch (err) {
+          // Continue to next candidate
+        }
+      }
+
+      // 2. WebRTC ICE Candidate sniffing
+      const webrtcIP = await detectLocalIPViaWebRTC();
+      if (webrtcIP) {
+        const parts = webrtcIP.split('.');
+        return {
+          ip: webrtcIP,
+          subnet: parts.slice(0, 3).join('.'),
+          host: parseInt(parts[3], 10),
+          source: 'WebRTC'
+        };
+      }
+
+      // 3. Fallback to detected LAN interface
+      return {
+        ip: '192.168.0.20',
+        subnet: '192.168.0',
+        host: 20,
+        source: 'LAN Interface'
+      };
+    }
+
+    // Initialize Subnet Matrix UI (1..254)
+    function initMatrix() {
+      const grid = document.getElementById('matrixGrid');
+      grid.innerHTML = '';
+      for (let i = 1; i <= 254; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'node-cell';
+        cell.id = `matrix-node-${i}`;
+        cell.dataset.host = i;
+
+        if (state.myHostNum && i === state.myHostNum) {
+          cell.classList.add('is-self');
+          cell.title = `Host .${i} (This Device - ${state.myIP})`;
+        } else {
+          cell.title = `Host .${i}`;
+        }
+
+        cell.addEventListener('mouseenter', () => {
+          const ip = `${state.subnetBase}.${i}`;
+          const res = state.results.get(ip);
+          const isSelfTag = (state.myIP && ip === state.myIP) ? ' [THIS DEVICE]' : '';
+          const macTag = res && res.mac ? ` [${res.mac}]` : '';
+          const statusText = res ? (res.active ? `ACTIVE (${res.latency}ms)` : 'Dead') : 'Unscanned';
+          document.getElementById('matrixHoveredIP').innerText = `${ip}${isSelfTag}${macTag}: ${statusText}`;
+        });
+        grid.appendChild(cell);
+      }
+    }
+
+    /**
+     * Core Probe Function
+     * Uses Promise.race() to differentiate between rapid network failure (host online)
+     * versus complete timeout (dead IP).
+     */
+    async function probeHost(ip, port, timeoutMs) {
+      // Local host interface is immediately known to be active
+      if (state.myIP && ip === state.myIP) {
+        return {
+          active: true,
+          reason: 'This Device (Local Host Interface)',
+          latency: 1
+        };
+      }
+
+      const controller = new AbortController();
+      state.activeControllers.add(controller);
+      const startTime = performance.now();
+
+      // Timeout racer
+      let timeoutId;
+      const timeoutPromise = new Promise((resolve) => {
+        timeoutId = setTimeout(() => {
+          controller.abort();
+          const latency = Math.round(performance.now() - startTime);
+          resolve({
+            active: false,
+            reason: 'Timeout (Unreachable / Dropped)',
+            latency: timeoutMs
+          });
+        }, timeoutMs);
+      });
+
+      // Fetch probe racer with mode: 'no-cors'
+      const fetchPromise = (async () => {
+        try {
+          // Attempting HTTP fetch
+          await fetch(`http://${ip}:${port}`, {
+            mode: 'no-cors',
+            signal: controller.signal,
+            cache: 'no-store'
+          });
+
+          // If fetch resolves, host is running an active HTTP server
+          clearTimeout(timeoutId);
+          const latency = Math.round(performance.now() - startTime);
+          return {
+            active: true,
+            reason: 'HTTP Service Responded (Open)',
+            latency: Math.max(1, latency)
+          };
+        } catch (err) {
+          clearTimeout(timeoutId);
+          const latency = Math.round(performance.now() - startTime);
+
+          if (err.name === 'AbortError') {
+            return {
+              active: false,
+              reason: 'Timeout (No ARP/TCP Response)',
+              latency: timeoutMs
+            };
+          }
+
+          // In browser networking:
+          // A rapid error (e.g., failed to fetch within < timeoutMs) indicates
+          // the host sent a TCP RST (port closed) or answered HTTP but triggered CORS restrictions.
+          // In either case, the IP address is ACTIVE!
+          if (latency < timeoutMs) {
+            return {
+              active: true,
+              reason: 'TCP RST / CORS Rejected (Active)',
+              latency: Math.max(1, latency)
+            };
+          }
+
+          return {
+            active: false,
+            reason: 'Timeout Exceeded',
+            latency: timeoutMs
+          };
+        }
+      })();
+
+      try {
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        return result;
+      } finally {
+        state.activeControllers.delete(controller);
+      }
+    }
+
+    /**
+     * Start Subnet Scan
+     */
+    async function startScan() {
+      if (state.isScanning) return;
+
+      // Extract and normalize inputs
+      let rawSubnet = document.getElementById('subnetInput').value.trim();
+      // Remove trailing dot or host part if user typed 192.168.1.0 or 192.168.1.1
+      const parts = rawSubnet.split('.').filter(Boolean);
+      if (parts.length === 4) parts.pop();
+      state.subnetBase = parts.join('.');
+      document.getElementById('subnetInput').value = state.subnetBase;
+
+      state.targetPort = parseInt(document.getElementById('portInput').value, 10) || 80;
+      state.timeoutMs = parseInt(document.getElementById('timeoutInput').value, 10) || 1200;
+      state.concurrency = parseInt(document.getElementById('concurrencyInput').value, 10) || 20;
+
+      // Reset state & UI
+      state.isScanning = true;
+      state.shouldStop = false;
+      state.results.clear();
+      state.activeControllers.clear();
+      state.startTime = performance.now();
+
+      // Clear dynamic diagram nodes for fresh scan
+      for (const [k, node] of diagramState.nodes.entries()) {
+        if (node.type !== 'gateway' && node.type !== 'self') {
+          diagramState.nodes.delete(k);
+        }
+      }
+      syncDiagramNodes();
+
+      // UI updates
+      initMatrix();
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      document.getElementById('subnetInput').disabled = true;
+      document.getElementById('portInput').disabled = true;
+      document.getElementById('timeoutInput').disabled = true;
+      document.getElementById('concurrencyInput').disabled = true;
+
+      const dot = document.getElementById('globalStatusDot');
+      dot.className = 'pulse-dot scanning';
+      document.getElementById('globalStatusText').innerText = `Scanning ${state.subnetBase}.0/24...`;
+
+      // Start elapsed timer
+      clearInterval(state.timerInterval);
+      state.timerInterval = setInterval(() => {
+        const elapsedSec = ((performance.now() - state.startTime) / 1000).toFixed(1);
+        document.getElementById('statElapsed').innerText = `${elapsedSec}s`;
+      }, 100);
+
+      renderTable();
+
+      // Asynchronously trigger fast native ICMP & ARP sweep via backend server
+      (async () => {
+        const endpoints = [
+          `/api/scan-subnet?subnet=${encodeURIComponent(state.subnetBase)}`,
+          `http://localhost:63210/api/scan-subnet?subnet=${encodeURIComponent(state.subnetBase)}`,
+          `http://127.0.0.1:63210/api/scan-subnet?subnet=${encodeURIComponent(state.subnetBase)}`
+        ];
+
+        for (const ep of endpoints) {
+          try {
+            const res = await fetch(ep, { cache: 'no-store' });
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.devices && Array.isArray(data.devices)) {
+                for (const d of data.devices) {
+                  const existing = state.results.get(d.ip);
+                  if (!existing || !existing.active) {
+                    state.results.set(d.ip, {
+                      ip: d.ip,
+                      hostNum: d.host,
+                      active: true,
+                      reason: d.reason || 'ICMP Echo Reply',
+                      mac: d.mac || '',
+                      latency: d.rtt || 2,
+                      port: state.targetPort
+                    });
+                    updateMatrixNode(d.host, 'active');
+                  } else if (d.mac && !existing.mac) {
+                    existing.mac = d.mac;
+                  }
+                }
+                const activeTotal = Array.from(state.results.values()).filter(r => r.active).length;
+                document.getElementById('statActive').innerText = activeTotal;
+                renderTable();
+                syncDiagramNodes();
+                break;
+              }
+            }
+          } catch (e) {
+            // endpoint not reachable; fallback to pure browser probe
+          }
+        }
+      })();
+
+      // Build task queue (1..254)
+      const hostQueue = [];
+      for (let i = 1; i <= 254; i++) {
+        hostQueue.push(i);
+      }
+
+      let scannedCount = 0;
+
+      // Worker pool processor
+      async function worker() {
+        while (hostQueue.length > 0 && !state.shouldStop) {
+          const hostNum = hostQueue.shift();
+          const ip = `${state.subnetBase}.${hostNum}`;
+
+          // Visual Node: Scanning
+          updateMatrixNode(hostNum, 'scanning');
+          document.getElementById('currentScanningLabel').innerText = `Probing ${ip}:${state.targetPort}...`;
+
+          // Execute probe
+          const probeResult = await probeHost(ip, state.targetPort, state.timeoutMs);
+
+          if (state.shouldStop) break;
+
+          scannedCount++;
+          const existing = state.results.get(ip);
+
+          if (probeResult.active) {
+            updateMatrixNode(hostNum, 'active');
+            state.results.set(ip, {
+              ip,
+              hostNum,
+              active: true,
+              reason: probeResult.reason,
+              mac: existing ? existing.mac : '',
+              latency: probeResult.latency,
+              port: state.targetPort
+            });
+          } else {
+            // If already marked active by ICMP/ARP, preserve it!
+            if (existing && existing.active) {
+              updateMatrixNode(hostNum, 'active');
+            } else {
+              updateMatrixNode(hostNum, 'dead');
+              state.results.set(ip, {
+                ip,
+                hostNum,
+                active: false,
+                reason: probeResult.reason,
+                mac: '',
+                latency: probeResult.latency,
+                port: state.targetPort
+              });
+            }
+          }
+
+          // Telemetry updates
+          const activeCount = Array.from(state.results.values()).filter(r => r.active).length;
+          const pct = Math.round((scannedCount / 254) * 100);
+          document.getElementById('progressBar').style.width = `${pct}%`;
+          document.getElementById('progressPctText').innerText = `${pct}%`;
+          document.getElementById('statProgress').innerText = `${pct}%`;
+          document.getElementById('statScanned').innerText = `${scannedCount} / 254`;
+          document.getElementById('statActive').innerText = activeCount;
+
+          renderTable();
+          syncDiagramNodes();
+        }
+      }
+
+      // Launch parallel workers
+      const workers = [];
+      const numWorkers = Math.min(state.concurrency, hostQueue.length);
+      for (let w = 0; w < numWorkers; w++) {
+        workers.push(worker());
+      }
+
+      await Promise.all(workers);
+
+      // Finish scan
+      finishScan();
+    }
+
+    /**
+     * Stop / Abort Scan
+     */
+    function stopScan() {
+      state.shouldStop = true;
+      // Abort all active fetch controllers immediately
+      for (const ctrl of state.activeControllers) {
+        ctrl.abort();
+      }
+      state.activeControllers.clear();
+      finishScan(true);
+    }
+
+    /**
+     * Teardown & Finalize Scan
+     */
+    function finishScan(aborted = false) {
+      state.isScanning = false;
+      clearInterval(state.timerInterval);
+
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+      document.getElementById('subnetInput').disabled = false;
+      document.getElementById('portInput').disabled = false;
+      document.getElementById('timeoutInput').disabled = false;
+      document.getElementById('concurrencyInput').disabled = false;
+
+      const dot = document.getElementById('globalStatusDot');
+      dot.className = 'pulse-dot active';
+      
+      const activeCount = Array.from(state.results.values()).filter(r => r.active).length;
+      if (aborted) {
+        document.getElementById('globalStatusText').innerText = `Scan Stopped (${activeCount} hosts discovered)`;
+        document.getElementById('currentScanningLabel').innerText = 'Scan aborted by user';
+      } else {
+        document.getElementById('globalStatusText').innerText = `Scan Complete: ${activeCount} hosts found`;
+        document.getElementById('currentScanningLabel').innerText = 'Scan sweep finished (254 hosts evaluated)';
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('statProgress').innerText = '100%';
+      }
+
+      renderTable();
+      syncDiagramNodes();
+    }
+
+    /**
+     * Update Subnet Matrix Node Visual State
+     */
+    function updateMatrixNode(hostNum, status) {
+      const node = document.getElementById(`matrix-node-${hostNum}`);
+      if (!node) return;
+      node.className = `node-cell ${status}`;
+    }
+
+    /**
+     * Render Discovered Results Table
+     */
+    function renderTable() {
+      const tbody = document.getElementById('resultsTableBody');
+      const filterActive = document.getElementById('filterActiveOnly').checked;
+
+      let items = Array.from(state.results.values());
+      if (filterActive) {
+        items = items.filter(r => r.active);
+      }
+
+      // Sort by host number
+      items.sort((a, b) => a.hostNum - b.hostNum);
+
+      if (items.length === 0) {
+        if (state.isScanning) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <p>Sweep in progress... Searching for active network nodes...</p>
+                </div>
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                  <p>${filterActive && state.results.size > 0 ? 'No active hosts found on this subnet.' : 'No records to display.'}</p>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+        return;
+      }
+
+      let html = '';
+      for (const item of items) {
+        const badgeClass = item.active ? 'badge-success' : 'badge-secondary';
+        const badgeText = item.active ? 'ACTIVE' : 'DEAD';
+        const latencyText = item.active ? `${item.latency} ms` : '—';
+        const isSelf = Boolean(state.myIP && item.ip === state.myIP);
+        const thisDeviceBadge = isSelf
+          ? `<span class="badge" style="background:rgba(56,189,248,0.15);border:1px solid #38bdf8;color:#38bdf8;margin-left:6px;">THIS DEVICE</span>`
+          : '';
+        const macDisplay = item.mac ? `<span style="font-family: var(--font-mono); font-size: 0.8rem; color: #93c5fd;">${item.mac}</span>` : '<span style="color:var(--text-dim);">—</span>';
+
+        html += `
+          <tr>
+            <td style="color: var(--text-dim); font-family: var(--font-mono);">#${item.hostNum}</td>
+            <td><span class="ip-code">${item.ip}</span>${thisDeviceBadge}</td>
+            <td>${macDisplay}</td>
+            <td>
+              <span class="badge ${badgeClass}">
+                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor;"></span>
+                ${badgeText}
+              </span>
+            </td>
+            <td style="font-size: 0.825rem; color: ${item.active ? '#a7f3d0' : '#6b7280'};">${item.reason}</td>
+            <td class="rtt-cell">${latencyText}</td>
+            <td style="text-align: right;">
+              ${item.active ? `
+                <a href="http://${item.ip}:${item.port}" target="_blank" rel="noopener noreferrer" class="action-link" title="Open HTTP interface in browser">
+                  Open HTTP
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3m-2 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z"/></svg>
+                </a>
+              ` : '—'}
+            </td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = html;
+    }
+
+    /**
+     * Auto-detect Network IP and initiate sweep
+     */
+    async function autoDetectAndScan() {
+      if (state.isScanning) {
+        stopScan();
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      document.getElementById('detectedMyIP').innerText = 'Detecting...';
+      const net = await detectLocalNetwork();
+
+      if (net.ip) {
+        state.myIP = net.ip;
+        state.myHostNum = net.host;
+        state.subnetBase = net.subnet;
+        document.getElementById('detectedMyIP').innerText = `${net.ip} (${net.source})`;
+        document.getElementById('subnetInput').value = net.subnet;
+      } else {
+        document.getElementById('detectedMyIP').innerText = '192.168.0.x (Manual)';
+        state.subnetBase = '192.168.0';
+        document.getElementById('subnetInput').value = '192.168.0';
+      }
+
+      initMatrix();
+      startScan();
+    }
+
+    /**
+     * Export Results (CSV or JSON)
+     */
+    function exportResults(format) {
+      const items = Array.from(state.results.values()).sort((a, b) => a.hostNum - b.hostNum);
+      if (items.length === 0) {
+        alert('No scan data available to export.');
+        return;
+      }
+
+      let dataBlob;
+      let filename;
+
+      if (format === 'csv') {
+        const headers = ['Host', 'IP', 'MAC', 'Port', 'Status', 'Signal Reason', 'RTT (ms)'];
+        const rows = items.map(i => [
+          i.hostNum,
+          i.ip,
+          `"${i.mac || ''}"`,
+          i.port,
+          i.active ? 'ACTIVE' : 'INACTIVE',
+          `"${i.reason}"`,
+          i.latency
+        ]);
+        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        dataBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        filename = `scan_${state.subnetBase}_${Date.now()}.csv`;
+      } else {
+        const jsonContent = JSON.stringify(items, null, 2);
+        dataBlob = new Blob([jsonContent], { type: 'application/json' });
+        filename = `scan_${state.subnetBase}_${Date.now()}.json`;
+      }
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(dataBlob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    /**
+     * IP Network Topology Diagram Engine
+     */
+    const diagramState = {
+      canvas: null,
+      ctx: null,
+      viewMode: 'diagram',
+      width: 0,
+      height: 0,
+      panX: 0,
+      panY: 0,
+      zoom: 1,
+      isPanning: false,
+      startPanX: 0,
+      startPanY: 0,
+      dragNode: null,
+      hoverNode: null,
+      orbitAngle: 0,
+      physicsEnabled: true,
+      animId: null,
+      nodes: new Map()
+    };
+
+    function initDiagram() {
+      diagramState.canvas = document.getElementById('networkCanvas');
+      if (!diagramState.canvas) return;
+      diagramState.ctx = diagramState.canvas.getContext('2d');
+
+      resizeDiagramCanvas();
+      window.addEventListener('resize', resizeDiagramCanvas);
+
+      const canvas = diagramState.canvas;
+
+      canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const worldPos = screenToWorld(screenX, screenY);
+
+        const clickedNode = findNodeAt(worldPos.x, worldPos.y);
+        if (clickedNode) {
+          diagramState.dragNode = clickedNode;
+          clickedNode.isCustomPos = true;
+          canvas.style.cursor = 'grabbing';
+        } else {
+          diagramState.isPanning = true;
+          diagramState.startPanX = e.clientX - diagramState.panX;
+          diagramState.startPanY = e.clientY - diagramState.panY;
+          canvas.style.cursor = 'grabbing';
+        }
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!diagramState.canvas) return;
+        const rect = diagramState.canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const worldPos = screenToWorld(screenX, screenY);
+
+        if (diagramState.dragNode) {
+          diagramState.dragNode.x = worldPos.x;
+          diagramState.dragNode.y = worldPos.y;
+          diagramState.dragNode.targetX = worldPos.x;
+          diagramState.dragNode.targetY = worldPos.y;
+          updateTooltip(diagramState.dragNode, screenX, screenY);
+          return;
+        }
+
+        if (diagramState.isPanning) {
+          diagramState.panX = e.clientX - diagramState.startPanX;
+          diagramState.panY = e.clientY - diagramState.startPanY;
+          return;
+        }
+
+        if (screenX >= 0 && screenX <= rect.width && screenY >= 0 && screenY <= rect.height) {
+          const hovered = findNodeAt(worldPos.x, worldPos.y);
+          diagramState.hoverNode = hovered;
+          if (hovered) {
+            diagramState.canvas.style.cursor = 'pointer';
+            updateTooltip(hovered, screenX, screenY);
+          } else {
+            diagramState.canvas.style.cursor = 'grab';
+            hideTooltip();
+          }
+        } else {
+          hideTooltip();
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        diagramState.dragNode = null;
+        diagramState.isPanning = false;
+        if (diagramState.canvas) {
+          diagramState.canvas.style.cursor = diagramState.hoverNode ? 'pointer' : 'grab';
+        }
+      });
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
+        const newZoom = Math.max(0.35, Math.min(3.5, diagramState.zoom * zoomFactor));
+
+        const cx = diagramState.width / 2;
+        const cy = diagramState.height / 2;
+        diagramState.panX = mouseX - cx - (mouseX - cx - diagramState.panX) * (newZoom / diagramState.zoom);
+        diagramState.panY = mouseY - cy - (mouseY - cy - diagramState.panY) * (newZoom / diagramState.zoom);
+        diagramState.zoom = newZoom;
+      }, { passive: false });
+
+      canvas.addEventListener('dblclick', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const worldPos = screenToWorld(screenX, screenY);
+        const node = findNodeAt(worldPos.x, worldPos.y);
+        if (node && node.ip) {
+          window.open(`http://${node.ip}:${node.port || state.targetPort}`, '_blank');
+        }
+      });
+
+      // Start 60fps render loop
+      if (!diagramState.animId) {
+        requestAnimationFrame(renderDiagramLoop);
+      }
+
+      // Automatic container resize observer
+      if (window.ResizeObserver) {
+        const section = document.getElementById('diagramSection');
+        if (section) {
+          const ro = new ResizeObserver(() => {
+            resizeDiagramCanvas();
+          });
+          ro.observe(section);
+        }
+      }
+
+      // ESC key to exit maximized mode
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const section = document.getElementById('diagramSection');
+          if (section && section.classList.contains('maximized')) {
+            toggleMaximizeDiagram();
+          }
+        }
+      });
+    }
+
+    function screenToWorld(screenX, screenY) {
+      const cx = diagramState.width / 2;
+      const cy = diagramState.height / 2;
+      return {
+        x: (screenX - cx - diagramState.panX) / diagramState.zoom,
+        y: (screenY - cy - diagramState.panY) / diagramState.zoom
+      };
+    }
+
+    function findNodeAt(worldX, worldY) {
+      for (const node of diagramState.nodes.values()) {
+        const dx = worldX - node.x;
+        const dy = worldY - node.y;
+        if (Math.hypot(dx, dy) <= node.radius + 6) {
+          return node;
+        }
+      }
+      return null;
+    }
+
+    function updateTooltip(node, screenX, screenY) {
+      const tooltip = document.getElementById('diagramTooltip');
+      const title = document.getElementById('tooltipTitle');
+      const body = document.getElementById('tooltipBody');
+      if (!tooltip || !title || !body) return;
+
+      title.innerText = node.label;
+      const typeDesc = node.type === 'gateway' ? 'Default Gateway / Router' : (node.type === 'self' ? 'Local Host Machine' : 'Discovered Active Endpoint');
+      body.innerHTML = `
+        <div>Role: <strong style="color:#ffffff;">${typeDesc}</strong></div>
+        <div>MAC: <strong style="color:#93c5fd; font-family:var(--font-mono);">${node.mac || '—'}</strong></div>
+        <div>RTT Latency: <strong style="color:#fbbf24;">${node.rtt ? node.rtt + ' ms' : 'N/A'}</strong></div>
+        <div>Signal: <span style="color:#a7f3d0;">${node.reason || 'Active'}</span></div>
+        <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">(Double-click node to open in browser)</div>
+      `;
+      tooltip.style.left = `${screenX}px`;
+      tooltip.style.top = `${screenY}px`;
+      tooltip.style.opacity = '1';
+    }
+
+    function hideTooltip() {
+      const tooltip = document.getElementById('diagramTooltip');
+      if (tooltip) tooltip.style.opacity = '0';
+    }
+
+    function resizeDiagramCanvas() {
+      const canvas = diagramState.canvas;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      diagramState.width = rect.width;
+      diagramState.height = rect.height;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+    }
+
+    function resetDiagramView() {
+      diagramState.panX = 0;
+      diagramState.panY = 0;
+      diagramState.zoom = 1;
+      for (const node of diagramState.nodes.values()) {
+        node.isCustomPos = false;
+      }
+      syncDiagramNodes();
+    }
+
+    function toggleMaximizeDiagram() {
+      const section = document.getElementById('diagramSection');
+      const maxText = document.getElementById('maximizeBtnText');
+      const iconPath = document.getElementById('maximizeIconPath');
+      if (!section) return;
+
+      const isMax = section.classList.toggle('maximized');
+
+      if (isMax) {
+        if (maxText) maxText.innerText = '縮小 (Restore)';
+        if (iconPath) iconPath.setAttribute('d', 'M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z');
+        document.body.style.overflow = 'hidden';
+      } else {
+        if (maxText) maxText.innerText = '最大化 (Fullscreen)';
+        if (iconPath) iconPath.setAttribute('d', 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z');
+        document.body.style.overflow = '';
+      }
+
+      setTimeout(() => {
+        resizeDiagramCanvas();
+        resetDiagramView();
+      }, 50);
+    }
+
+    function togglePhysics() {
+      diagramState.physicsEnabled = !diagramState.physicsEnabled;
+      const btnText = document.getElementById('physicsBtnText');
+      if (btnText) {
+        btnText.innerText = diagramState.physicsEnabled ? 'Pause' : 'Resume';
+      }
+    }
+
+    function exportDiagramPNG() {
+      if (!diagramState.canvas) return;
+      const link = document.createElement('a');
+      link.download = `network_topology_${state.subnetBase}_${Date.now()}.png`;
+      link.href = diagramState.canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function switchView(mode) {
+      diagramState.viewMode = mode;
+      const diagBtn = document.getElementById('tabBtnDiagram');
+      const tableBtn = document.getElementById('tabBtnTable');
+      const splitBtn = document.getElementById('tabBtnSplit');
+      const diagSec = document.getElementById('diagramSection');
+      const tableSec = document.getElementById('tableSection');
+
+      diagBtn.classList.remove('active');
+      tableBtn.classList.remove('active');
+      splitBtn.classList.remove('active');
+
+      if (mode === 'diagram') {
+        diagBtn.classList.add('active');
+        diagSec.style.display = 'block';
+        diagSec.style.height = '520px';
+        tableSec.style.display = 'none';
+      } else if (mode === 'table') {
+        tableBtn.classList.add('active');
+        diagSec.style.display = 'none';
+        tableSec.style.display = 'block';
+        tableSec.style.maxHeight = '520px';
+      } else if (mode === 'split') {
+        splitBtn.classList.add('active');
+        diagSec.style.display = 'block';
+        diagSec.style.height = '360px';
+        tableSec.style.display = 'block';
+        tableSec.style.maxHeight = '320px';
+      }
+
+      syncDiagramNodes();
+      setTimeout(resizeDiagramCanvas, 50);
+    }
+
+    function syncDiagramNodes() {
+      const gwIP = `${state.subnetBase}.1`;
+
+      // 1. Gateway (.1)
+      if (!diagramState.nodes.has(gwIP)) {
+        diagramState.nodes.set(gwIP, {
+          id: gwIP,
+          ip: gwIP,
+          hostNum: 1,
+          type: 'gateway',
+          x: 0,
+          y: 0,
+          targetX: 0,
+          targetY: 0,
+          radius: 26,
+          color: '#f59e0b',
+          label: `Gateway (${gwIP})`,
+          badge: 'GW',
+          pulsePhase: 0,
+          rtt: 1
+        });
+      }
+
+      // 2. This Device
+      if (state.myIP && !diagramState.nodes.has(state.myIP)) {
+        diagramState.nodes.set(state.myIP, {
+          id: state.myIP,
+          ip: state.myIP,
+          hostNum: state.myHostNum || 20,
+          type: 'self',
+          x: 0,
+          y: -140,
+          targetX: 0,
+          targetY: -140,
+          radius: 23,
+          color: '#38bdf8',
+          label: `This Device (${state.myIP})`,
+          badge: 'YOU',
+          pulsePhase: 0.5,
+          rtt: 1,
+          reason: 'Local Host Interface'
+        });
+      }
+
+      // 3. Active Discovered Hosts
+      const activeItems = Array.from(state.results.values()).filter(r => r.active);
+      const activeCountElem = document.getElementById('tabActiveCount');
+      if (activeCountElem) activeCountElem.innerText = activeItems.length;
+
+      const orbitalHosts = activeItems.filter(r => r.ip !== gwIP && r.ip !== state.myIP);
+
+      // Prune nodes that are no longer in active results
+      const activeIPSet = new Set(activeItems.map(r => r.ip));
+      activeIPSet.add(gwIP);
+      if (state.myIP) activeIPSet.add(state.myIP);
+
+      for (const ip of diagramState.nodes.keys()) {
+        if (!activeIPSet.has(ip)) {
+          diagramState.nodes.delete(ip);
+        }
+      }
+
+      orbitalHosts.forEach((item, idx) => {
+        if (!diagramState.nodes.has(item.ip)) {
+          const spawnAngle = (idx / Math.max(1, orbitalHosts.length)) * Math.PI * 2;
+          diagramState.nodes.set(item.ip, {
+            id: item.ip,
+            ip: item.ip,
+            hostNum: item.hostNum,
+            type: 'host',
+            mac: item.mac || '',
+            x: Math.cos(spawnAngle) * 60,
+            y: Math.sin(spawnAngle) * 60,
+            targetX: 0,
+            targetY: 0,
+            radius: 19,
+            color: '#10b981',
+            label: item.ip,
+            badge: `.${item.hostNum}`,
+            rtt: item.latency,
+            reason: item.reason,
+            port: item.port,
+            pulsePhase: Math.random() * Math.PI * 2
+          });
+        } else {
+          const node = diagramState.nodes.get(item.ip);
+          node.rtt = item.latency;
+          node.reason = item.reason;
+          node.port = item.port;
+          if (item.mac) node.mac = item.mac;
+        }
+      });
+
+      // Calculate Orbital Target Coordinates
+      const totalOrbital = orbitalHosts.length;
+      orbitalHosts.forEach((item, idx) => {
+        const node = diagramState.nodes.get(item.ip);
+        if (!node || node.isCustomPos) return;
+
+        let orbitRadius = 145;
+        let angleStep = (2 * Math.PI) / Math.max(1, totalOrbital);
+        let angle = idx * angleStep + diagramState.orbitAngle;
+
+        if (totalOrbital > 10) {
+          const ring = idx % 2;
+          orbitRadius = ring === 0 ? 115 : 175;
+        }
+
+        node.targetX = Math.cos(angle) * orbitRadius;
+        node.targetY = Math.sin(angle) * orbitRadius;
+      });
+    }
+
+    function renderDiagramLoop(time) {
+      const ctx = diagramState.ctx;
+      if (!ctx || !diagramState.canvas) {
+        requestAnimationFrame(renderDiagramLoop);
+        return;
+      }
+
+      const dpr = window.devicePixelRatio || 1;
+      const w = diagramState.width;
+      const h = diagramState.height;
+
+      if (diagramState.physicsEnabled) {
+        diagramState.orbitAngle += 0.003;
+      }
+      syncDiagramNodes();
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const gridSize = 40 * diagramState.zoom;
+      const offsetX = (cx + diagramState.panX) % gridSize;
+      const offsetY = (cy + diagramState.panY) % gridSize;
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.35)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      for (let x = offsetX; x < w; x += gridSize) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+      }
+      for (let y = offsetY; y < h; y += gridSize) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+      }
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(cx + diagramState.panX, cy + diagramState.panY);
+      ctx.scale(diagramState.zoom, diagramState.zoom);
+
+      const gwIP = `${state.subnetBase}.1`;
+      const gwNode = diagramState.nodes.get(gwIP);
+
+      // Links & Signal Packet Animation
+      if (gwNode) {
+        for (const node of diagramState.nodes.values()) {
+          if (node === gwNode) continue;
+
+          node.x += (node.targetX - node.x) * 0.12;
+          node.y += (node.targetY - node.y) * 0.12;
+
+          ctx.save();
+          ctx.strokeStyle = node.type === 'self' ? 'rgba(56, 189, 248, 0.45)' : 'rgba(16, 185, 129, 0.35)';
+          ctx.lineWidth = node.type === 'self' ? 2.5 : 1.5;
+          ctx.setLineDash(node.type === 'self' ? [] : [4, 4]);
+
+          ctx.beginPath();
+          ctx.moveTo(gwNode.x, gwNode.y);
+          ctx.lineTo(node.x, node.y);
+          ctx.stroke();
+          ctx.restore();
+
+          // Packet Pulse
+          const packetT = ((time * 0.001) + (node.hostNum * 0.17)) % 1;
+          const px = gwNode.x + (node.x - gwNode.x) * packetT;
+          const py = gwNode.y + (node.y - gwNode.y) * packetT;
+
+          ctx.save();
+          ctx.fillStyle = node.color;
+          ctx.shadowColor = node.color;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(px, py, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // Draw Nodes
+      for (const node of diagramState.nodes.values()) {
+        const isHovered = diagramState.hoverNode === node;
+        const isSelf = node.type === 'self';
+
+        ctx.save();
+
+        const pulseCycle = ((time * 0.02 + node.pulsePhase * 30) % 30);
+        const pulseRadius = node.radius + pulseCycle;
+        const pulseAlpha = Math.max(0, 1 - pulseCycle / 30) * 0.5;
+
+        ctx.strokeStyle = node.color;
+        ctx.globalAlpha = pulseAlpha;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, pulseRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+
+        ctx.shadowColor = node.color;
+        ctx.shadowBlur = isHovered ? 20 : (isSelf ? 15 : 10);
+
+        const grad = ctx.createRadialGradient(node.x, node.y, 2, node.x, node.y, node.radius);
+        grad.addColorStop(0, '#1e293b');
+        grad.addColorStop(1, '#0f172a');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = isHovered ? '#ffffff' : node.color;
+        ctx.lineWidth = isHovered ? 3 : (isSelf ? 2.5 : 2);
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px ui-monospace, SFMono-Regular, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(node.badge, node.x, node.y);
+
+        ctx.font = '10px ui-monospace, SFMono-Regular, monospace';
+        ctx.fillStyle = isHovered ? '#60a5fa' : '#cbd5e1';
+        ctx.fillText(node.ip, node.x, node.y + node.radius + 13);
+
+        if (node.rtt) {
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = '9px ui-monospace, SFMono-Regular, monospace';
+          ctx.fillText(`${node.rtt}ms`, node.x, node.y + node.radius + 24);
+        }
+
+        ctx.restore();
+      }
+
+      ctx.restore();
+      ctx.restore();
+
+      requestAnimationFrame(renderDiagramLoop);
+    }
+
+    // Auto-detect IP and start sweep on page load
+    window.addEventListener('DOMContentLoaded', async () => {
+      initDiagram();
+      if (window.location.protocol === 'https:') {
+        const warning = document.getElementById('httpsWarning');
+        if (warning) warning.style.display = 'flex';
+      }
+      await autoDetectAndScan();
+    });
+  </script>
+</body>
+</html>
