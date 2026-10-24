@@ -804,6 +804,10 @@
           <span class="pulse-dot active" style="background:#38bdf8; box-shadow:0 0 10px rgba(56,189,248,0.5);"></span>
           <span>My IP: <strong id="detectedMyIP" style="color:#38bdf8; font-family:var(--font-mono);">Detecting...</strong></span>
         </div>
+        <div class="status-pill" id="headerAutoScanBadge" style="display:none; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.12); color: #38bdf8;">
+          <span class="pulse-dot" style="background: #38bdf8; box-shadow: 0 0 8px #38bdf8;"></span>
+          <span>Auto Scan: <strong id="headerAutoScanSec">30s</strong></span>
+        </div>
         <div class="status-pill">
           <span class="pulse-dot" id="globalStatusDot"></span>
           <span id="globalStatusText">Engine Idle</span>
@@ -890,6 +894,32 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
               Abort
             </button>
+          </div>
+
+          <!-- Auto Scan Continuous Mode -->
+          <div class="auto-scan-card" style="margin-top: 0.85rem; padding: 0.75rem 0.85rem; background: #0c1322; border: 1px solid #1e293b; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.825rem; font-weight: 600; color: #e2e8f0; margin-bottom: 0; user-select: none;">
+                <input type="checkbox" id="autoScanToggle" onchange="toggleAutoScan(this.checked)" style="width: 15px; height: 15px; accent-color: #3b82f6; cursor: pointer;">
+                <span>Auto Scan (Continuous Sweep)</span>
+              </label>
+              <span id="autoScanCountdownBadge" class="status-pill" style="display:none; font-size: 0.7rem; padding: 0.15rem 0.5rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">
+                Next in <strong id="autoScanCountdownSec" style="margin-left: 2px;">30s</strong>
+              </span>
+            </div>
+            <div id="autoScanOptions" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; font-size: 0.75rem; color: #94a3b8;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <label for="autoScanIntervalSelect" style="margin-bottom:0; font-size: 0.75rem; color:#94a3b8;">Interval:</label>
+                <select id="autoScanIntervalSelect" class="form-control" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.75rem; height: auto;" onchange="updateAutoScanInterval()">
+                  <option value="15">15 seconds</option>
+                  <option value="30" selected>30 seconds</option>
+                  <option value="60">1 minute</option>
+                  <option value="120">2 minutes</option>
+                  <option value="300">5 minutes</option>
+                </select>
+              </div>
+              <span style="font-size: 0.7rem; color: #64748b;">Auto-refreshes inventory</span>
+            </div>
           </div>
         </form>
 
@@ -1074,6 +1104,103 @@
       results: new Map(), // key: ip, value: { ip, hostNum, active, reason, latency, timestamp }
       activeControllers: new Set()
     };
+
+    /**
+     * Auto Scan State & Interval Engine
+     */
+    const autoScanState = {
+      enabled: false,
+      intervalSec: 30,
+      countdownTimer: null,
+      remainingSec: 0,
+      isScheduled: false
+    };
+
+    function toggleAutoScan(enabled) {
+      autoScanState.enabled = enabled;
+      try {
+        localStorage.setItem('ipscanner_autoscan_enabled', enabled ? 'true' : 'false');
+      } catch (e) {}
+
+      if (!enabled) {
+        clearAutoScanTimer();
+        return;
+      }
+
+      // If idle, start immediately
+      if (!state.isScanning) {
+        startScan();
+      } else {
+        updateAutoScanUI();
+      }
+    }
+
+    function updateAutoScanInterval() {
+      const select = document.getElementById('autoScanIntervalSelect');
+      const val = parseInt(select.value, 10) || 30;
+      autoScanState.intervalSec = val;
+      try {
+        localStorage.setItem('ipscanner_autoscan_interval', String(val));
+      } catch (e) {}
+
+      if (autoScanState.enabled && autoScanState.isScheduled && !state.isScanning) {
+        scheduleNextAutoScan(val);
+      }
+    }
+
+    function scheduleNextAutoScan(seconds = null) {
+      clearAutoScanTimer();
+      if (!autoScanState.enabled) return;
+
+      autoScanState.isScheduled = true;
+      autoScanState.remainingSec = seconds !== null ? seconds : autoScanState.intervalSec;
+      updateAutoScanUI();
+
+      autoScanState.countdownTimer = setInterval(() => {
+        autoScanState.remainingSec--;
+        if (autoScanState.remainingSec <= 0) {
+          clearAutoScanTimer();
+          if (autoScanState.enabled && !state.isScanning) {
+            startScan();
+          }
+        } else {
+          updateAutoScanUI();
+        }
+      }, 1000);
+    }
+
+    function clearAutoScanTimer() {
+      if (autoScanState.countdownTimer) {
+        clearInterval(autoScanState.countdownTimer);
+        autoScanState.countdownTimer = null;
+      }
+      autoScanState.isScheduled = false;
+      autoScanState.remainingSec = 0;
+      updateAutoScanUI();
+    }
+
+    function updateAutoScanUI() {
+      const badge = document.getElementById('autoScanCountdownBadge');
+      const secEl = document.getElementById('autoScanCountdownSec');
+      const headerBadge = document.getElementById('headerAutoScanBadge');
+      const headerSec = document.getElementById('headerAutoScanSec');
+
+      if (!autoScanState.enabled || !autoScanState.isScheduled) {
+        if (badge) badge.style.display = 'none';
+        if (headerBadge) headerBadge.style.display = 'none';
+        return;
+      }
+
+      const txt = `${autoScanState.remainingSec}s`;
+      if (badge) {
+        badge.style.display = 'inline-flex';
+        if (secEl) secEl.innerText = txt;
+      }
+      if (headerBadge) {
+        headerBadge.style.display = 'inline-flex';
+        if (headerSec) headerSec.innerText = txt;
+      }
+    }
 
     // Sniff local IP using WebRTC ICE candidate fallback
     async function detectLocalIPViaWebRTC() {
@@ -1300,19 +1427,14 @@
       state.concurrency = parseInt(document.getElementById('concurrencyInput').value, 10) || 20;
 
       // Reset state & UI
+      clearAutoScanTimer();
       state.isScanning = true;
       state.shouldStop = false;
       state.results.clear();
       state.activeControllers.clear();
       state.startTime = performance.now();
 
-      // Clear dynamic diagram nodes for fresh scan
-      for (const [k, node] of diagramState.nodes.entries()) {
-        if (node.type !== 'gateway' && node.type !== 'self') {
-          diagramState.nodes.delete(k);
-        }
-      }
-      syncDiagramNodes();
+      syncDiagramNodes(false);
 
       // UI updates
       initMatrix();
@@ -1504,7 +1626,17 @@
       }
 
       renderTable();
-      syncDiagramNodes();
+      syncDiagramNodes(true);
+
+      if (!aborted && autoScanState.enabled) {
+        scheduleNextAutoScan(autoScanState.intervalSec);
+      } else if (aborted) {
+        clearAutoScanTimer();
+        autoScanState.enabled = false;
+        const toggle = document.getElementById('autoScanToggle');
+        if (toggle) toggle.checked = false;
+        try { localStorage.setItem('ipscanner_autoscan_enabled', 'false'); } catch (e) {}
+      }
     }
 
     /**
@@ -1955,7 +2087,7 @@
       setTimeout(resizeDiagramCanvas, 50);
     }
 
-    function syncDiagramNodes() {
+    function syncDiagramNodes(pruneDead = !state.isScanning) {
       const gwIP = `${state.subnetBase}.1`;
 
       // 1. Gateway (.1)
@@ -2006,14 +2138,16 @@
 
       const orbitalHosts = activeItems.filter(r => r.ip !== gwIP && r.ip !== state.myIP);
 
-      // Prune nodes that are no longer in active results
-      const activeIPSet = new Set(activeItems.map(r => r.ip));
-      activeIPSet.add(gwIP);
-      if (state.myIP) activeIPSet.add(state.myIP);
+      // Prune nodes that are no longer in active results when scan is complete
+      if (pruneDead) {
+        const activeIPSet = new Set(activeItems.map(r => r.ip));
+        activeIPSet.add(gwIP);
+        if (state.myIP) activeIPSet.add(state.myIP);
 
-      for (const ip of diagramState.nodes.keys()) {
-        if (!activeIPSet.has(ip)) {
-          diagramState.nodes.delete(ip);
+        for (const ip of diagramState.nodes.keys()) {
+          if (!activeIPSet.has(ip)) {
+            diagramState.nodes.delete(ip);
+          }
         }
       }
 
@@ -2223,6 +2357,23 @@
         const warning = document.getElementById('httpsWarning');
         if (warning) warning.style.display = 'flex';
       }
+
+      // Restore Auto Scan preferences from localStorage
+      try {
+        const savedInterval = localStorage.getItem('ipscanner_autoscan_interval');
+        if (savedInterval) {
+          const select = document.getElementById('autoScanIntervalSelect');
+          if (select) select.value = savedInterval;
+          autoScanState.intervalSec = parseInt(savedInterval, 10) || 30;
+        }
+        const savedEnabled = localStorage.getItem('ipscanner_autoscan_enabled') === 'true';
+        if (savedEnabled) {
+          const toggle = document.getElementById('autoScanToggle');
+          if (toggle) toggle.checked = true;
+          autoScanState.enabled = true;
+        }
+      } catch (e) {}
+
       await autoDetectAndScan();
     });
   </script>
