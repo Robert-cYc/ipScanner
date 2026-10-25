@@ -114,6 +114,31 @@
       border-radius: 9999px;
     }
 
+    .lang-switch-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid var(--card-border);
+      color: #93c5fd;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      user-select: none;
+    }
+
+    .lang-switch-btn:hover {
+      background: rgba(51, 65, 85, 0.95);
+      color: #ffffff;
+      border-color: #60a5fa;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
     .pulse-dot {
       width: 8px;
       height: 8px;
@@ -795,22 +820,30 @@
           </svg>
         </div>
         <div>
-          <span class="brand-title">LAN Radar</span>
-          <span class="brand-badge">PROBE v2.1</span>
+          <span class="brand-title" data-i18n="brandTitle">LAN Radar</span>
+          <span class="brand-badge" data-i18n="brandSubtitle">PROBE v2.1</span>
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <!-- Language Switcher Button -->
+        <button type="button" id="langSwitchBtn" onclick="toggleLanguage()" class="lang-switch-btn" title="切換語言 / Switch Language">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+          <span id="langSwitchText">English</span>
+        </button>
+
         <div class="status-pill" id="myIpPill" title="Detected client network interface">
           <span class="pulse-dot active" style="background:#38bdf8; box-shadow:0 0 10px rgba(56,189,248,0.5);"></span>
-          <span>My IP: <strong id="detectedMyIP" style="color:#38bdf8; font-family:var(--font-mono);">Detecting...</strong></span>
+          <span><span data-i18n="myIpPrefix">My IP:</span> <strong id="detectedMyIP" style="color:#38bdf8; font-family:var(--font-mono);">Detecting...</strong></span>
         </div>
         <div class="status-pill" id="headerAutoScanBadge" style="display:none; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.12); color: #38bdf8;">
           <span class="pulse-dot" style="background: #38bdf8; box-shadow: 0 0 8px #38bdf8;"></span>
-          <span>Auto Scan: <strong id="headerAutoScanSec">30s</strong></span>
+          <span><span data-i18n="autoScanHeader">Auto Scan:</span> <strong id="headerAutoScanSec">30s</strong></span>
         </div>
         <div class="status-pill">
           <span class="pulse-dot" id="globalStatusDot"></span>
-          <span id="globalStatusText">Engine Idle</span>
+          <span id="globalStatusText" data-i18n="engineIdle">Engine Idle</span>
         </div>
       </div>
     </div>
@@ -833,14 +866,14 @@
       <section class="card">
         <h2 class="card-title">
           <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-          Scan Parameters
+          <span data-i18n="scanParamsTitle">Scan Parameters</span>
         </h2>
 
         <form id="scanForm" onsubmit="event.preventDefault(); startScan();">
           <div class="form-group">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
-              <label for="subnetInput" style="margin-bottom:0;">Target Subnet (/24 Base)</label>
-              <button type="button" onclick="autoDetectAndScan()" style="background:none; border:none; color:#38bdf8; font-size:0.75rem; cursor:pointer; text-decoration:underline;">Re-detect Local IP</button>
+              <label for="subnetInput" style="margin-bottom:0;" data-i18n="targetSubnetLabel">Target Subnet (/24 Base)</label>
+              <button type="button" onclick="autoDetectAndScan()" style="background:none; border:none; color:#38bdf8; font-size:0.75rem; cursor:pointer; text-decoration:underline;" data-i18n="reDetectIpBtn">Re-detect Local IP</button>
             </div>
             <div class="input-wrapper">
               <input 
@@ -854,24 +887,24 @@
                 title="Please specify a valid /24 base, e.g. 192.168.1"
               >
             </div>
-            <div class="hint">Will scan range <code>.1</code> to <code>.254</code></div>
+            <div class="hint" id="subnetHintText"><span data-i18n="subnetHint">Will scan range .1 to .254</span></div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label for="portInput">Target Port</label>
+              <label for="portInput" data-i18n="targetPortLabel">Target Port</label>
               <input type="number" id="portInput" class="form-control" value="80" min="1" max="65535">
-              <div class="hint">Default HTTP (80)</div>
+              <div class="hint" data-i18n="portHint">Default HTTP (80)</div>
             </div>
             <div class="form-group">
-              <label for="timeoutInput">Timeout (ms)</label>
+              <label for="timeoutInput" data-i18n="timeoutLabel">Timeout (ms)</label>
               <input type="number" id="timeoutInput" class="form-control" value="1200" min="300" max="5000" step="100">
-              <div class="hint">Strict race deadline</div>
+              <div class="hint" data-i18n="timeoutHint">Strict race deadline</div>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="concurrencyInput">Parallel Workers: <span id="concurrencyVal" style="color:#60a5fa; font-weight:600;">20</span></label>
+            <label for="concurrencyInput"><span data-i18n="concurrencyLabel">Parallel Workers:</span> <span id="concurrencyVal" style="color:#60a5fa; font-weight:600;">20</span></label>
             <input 
               type="range" 
               id="concurrencyInput" 
@@ -882,17 +915,17 @@
               style="width: 100%; accent-color: var(--primary);"
               oninput="document.getElementById('concurrencyVal').innerText = this.value"
             >
-            <div class="hint">Balances scan velocity vs browser connection queuing</div>
+            <div class="hint" data-i18n="concurrencyHint">Balances scan velocity vs browser connection queuing</div>
           </div>
 
           <div class="btn-group">
             <button type="submit" id="startBtn" class="btn btn-primary">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-              Start Scan
+              <span data-i18n="startScanBtn">Start Scan</span>
             </button>
             <button type="button" id="stopBtn" class="btn btn-danger" onclick="stopScan()" disabled>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
-              Abort
+              <span data-i18n="abortBtn">Abort</span>
             </button>
           </div>
 
@@ -901,24 +934,24 @@
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
               <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.825rem; font-weight: 600; color: #e2e8f0; margin-bottom: 0; user-select: none;">
                 <input type="checkbox" id="autoScanToggle" onchange="toggleAutoScan(this.checked)" style="width: 15px; height: 15px; accent-color: #3b82f6; cursor: pointer;">
-                <span>Auto Scan (Continuous Sweep)</span>
+                <span data-i18n="autoScanToggleLabel">Auto Scan (Continuous Sweep)</span>
               </label>
               <span id="autoScanCountdownBadge" class="status-pill" style="display:none; font-size: 0.7rem; padding: 0.15rem 0.5rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">
-                Next in <strong id="autoScanCountdownSec" style="margin-left: 2px;">30s</strong>
+                <span data-i18n="autoScanCountdownPrefix">Next in</span> <strong id="autoScanCountdownSec" style="margin-left: 2px;">30s</strong>
               </span>
             </div>
             <div id="autoScanOptions" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; font-size: 0.75rem; color: #94a3b8;">
               <div style="display: flex; align-items: center; gap: 0.4rem;">
-                <label for="autoScanIntervalSelect" style="margin-bottom:0; font-size: 0.75rem; color:#94a3b8;">Interval:</label>
+                <label for="autoScanIntervalSelect" style="margin-bottom:0; font-size: 0.75rem; color:#94a3b8;" data-i18n="autoScanIntervalLabel">Interval:</label>
                 <select id="autoScanIntervalSelect" class="form-control" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.75rem; height: auto;" onchange="updateAutoScanInterval()">
-                  <option value="15">15 seconds</option>
-                  <option value="30" selected>30 seconds</option>
-                  <option value="60">1 minute</option>
-                  <option value="120">2 minutes</option>
-                  <option value="300">5 minutes</option>
+                  <option value="15" data-i18n="autoScanOption15s">15 seconds</option>
+                  <option value="30" selected data-i18n="autoScanOption30s">30 seconds</option>
+                  <option value="60" data-i18n="autoScanOption1m">1 minute</option>
+                  <option value="120" data-i18n="autoScanOption2m">2 minutes</option>
+                  <option value="300" data-i18n="autoScanOption5m">5 minutes</option>
                 </select>
               </div>
-              <span style="font-size: 0.7rem; color: #64748b;">Auto-refreshes inventory</span>
+              <span style="font-size: 0.7rem; color: #64748b;" data-i18n="autoScanFootnote">Auto-refreshes inventory</span>
             </div>
           </div>
         </form>
@@ -926,8 +959,8 @@
         <!-- Subnet Matrix Visualizer -->
         <div class="matrix-container">
           <div class="matrix-title">
-            <span>Subnet Matrix (254 Hosts)</span>
-            <span id="matrixHoveredIP" style="font-family: var(--font-mono); font-size: 0.75rem; color:#60a5fa;">Hover a node</span>
+            <span data-i18n="matrixTitle">Subnet Matrix (254 Hosts)</span>
+            <span id="matrixHoveredIP" style="font-family: var(--font-mono); font-size: 0.75rem; color:#60a5fa;" data-i18n="matrixHoverDefault">Hover a node</span>
           </div>
           <div class="matrix-grid" id="matrixGrid">
             <!-- 254 nodes generated via JS -->
@@ -941,14 +974,14 @@
           <div>
             <h2 class="card-title" style="margin-bottom: 0.2rem;">
               <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
-              Discovered Hosts
+              <span data-i18n="discoveredHostsTitle">Discovered Hosts</span>
             </h2>
-            <p style="font-size: 0.8rem; color: var(--text-muted);">Real-time inventory of responsive endpoints</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="discoveredHostsDesc">Real-time inventory of responsive endpoints</p>
           </div>
           <div class="table-actions">
             <label class="filter-checkbox">
               <input type="checkbox" id="filterActiveOnly" checked onchange="renderTable()">
-              Active Only
+              <span data-i18n="filterActiveOnly">Active Only</span>
             </label>
             <button class="btn btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;" onclick="exportResults('csv')">
               CSV
@@ -962,19 +995,19 @@
         <!-- Telemetry Stats -->
         <div class="telemetry-row">
           <div class="stat-box">
-            <div class="stat-label">Progress</div>
+            <div class="stat-label" data-i18n="statProgress">Progress</div>
             <div class="stat-value" id="statProgress">0%</div>
           </div>
           <div class="stat-box">
-            <div class="stat-label">Active Hosts</div>
+            <div class="stat-label" data-i18n="statActiveHosts">Active Hosts</div>
             <div class="stat-value active-count" id="statActive">0</div>
           </div>
           <div class="stat-box">
-            <div class="stat-label">Scanned</div>
+            <div class="stat-label" data-i18n="statScanned">Scanned</div>
             <div class="stat-value" id="statScanned">0 / 254</div>
           </div>
           <div class="stat-box">
-            <div class="stat-label">Elapsed</div>
+            <div class="stat-label" data-i18n="statElapsed">Elapsed</div>
             <div class="stat-value" id="statElapsed">0.0s</div>
           </div>
         </div>
@@ -982,7 +1015,7 @@
         <!-- Progress Bar -->
         <div class="progress-section">
           <div class="progress-labels">
-            <span id="currentScanningLabel">Waiting for launch...</span>
+            <span id="currentScanningLabel" data-i18n="waitingLaunch">Waiting for launch...</span>
             <span id="progressPctText">0%</span>
           </div>
           <div class="progress-track">
@@ -994,15 +1027,15 @@
         <div class="view-tabs">
           <button type="button" id="tabBtnDiagram" class="tab-btn active" onclick="switchView('diagram')">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-            IP Network Diagram
+            <span data-i18n="tabDiagram">IP Network Diagram</span>
           </button>
           <button type="button" id="tabBtnTable" class="tab-btn" onclick="switchView('table')">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
-            Host Table (<span id="tabActiveCount">0</span>)
+            <span data-i18n="tabHostTable">Host Table</span> (<span id="tabActiveCount">0</span>)
           </button>
           <button type="button" id="tabBtnSplit" class="tab-btn" onclick="switchView('split')">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 3h8v18H3zm10 0h8v18h-8z"/></svg>
-            Split View
+            <span data-i18n="tabSplitView">Split View</span>
           </button>
         </div>
 
@@ -1020,7 +1053,7 @@
             </button>
             <button type="button" class="diagram-ctrl-btn" onclick="resetDiagramView()" title="Reset Camera">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
-              Reset
+              <span data-i18n="btnReset">Reset</span>
             </button>
             <button type="button" class="diagram-ctrl-btn" id="physicsBtn" onclick="togglePhysics()" title="Toggle Auto Orbit">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
@@ -1028,7 +1061,7 @@
             </button>
             <button type="button" class="diagram-ctrl-btn" onclick="exportDiagramPNG()" title="Export Diagram as PNG">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
-              Save PNG
+              <span data-i18n="btnSavePng">Save PNG</span>
             </button>
           </div>
 
@@ -1036,15 +1069,15 @@
           <div class="diagram-legend">
             <div class="legend-item">
               <span class="legend-dot" style="background: #f59e0b;"></span>
-              <span>Gateway (.1)</span>
+              <span data-i18n="legendGateway">Gateway (.1)</span>
             </div>
             <div class="legend-item">
               <span class="legend-dot" style="background: #38bdf8;"></span>
-              <span>This Device</span>
+              <span data-i18n="legendSelf">This Device</span>
             </div>
             <div class="legend-item">
               <span class="legend-dot" style="background: #10b981;"></span>
-              <span>Active Host</span>
+              <span data-i18n="legendActive">Active Host</span>
             </div>
           </div>
 
@@ -1060,13 +1093,13 @@
           <table>
             <thead>
               <tr>
-                <th style="width: 50px;">Host</th>
-                <th>IP Address</th>
-                <th>MAC Address</th>
-                <th>Status</th>
-                <th>Signal / Detection Reason</th>
-                <th>RTT</th>
-                <th style="text-align: right;">Action</th>
+                <th style="width: 50px;" data-i18n="thHost">Host</th>
+                <th data-i18n="thIp">IP Address</th>
+                <th data-i18n="thMac">MAC Address</th>
+                <th data-i18n="thStatus">Status</th>
+                <th data-i18n="thReason">Signal / Detection Reason</th>
+                <th data-i18n="thRtt">RTT</th>
+                <th style="text-align: right;" data-i18n="thAction">Action</th>
               </tr>
             </thead>
             <tbody id="resultsTableBody">
@@ -1074,7 +1107,7 @@
                 <td colspan="7">
                   <div class="empty-state">
                     <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                    <p>No active scan in progress. Click "Start Scan" to initiate subnet probing.</p>
+                    <p data-i18n="emptyTableIdle">No active scan in progress. Click "Start Scan" to initiate subnet probing.</p>
                   </div>
                 </td>
               </tr>
@@ -1087,6 +1120,279 @@
   </main>
 
   <script>
+    /**
+     * Internationalization (i18n) Engine - Traditional Chinese (繁體中文) & English
+     */
+    const i18n = {
+      currentLang: 'zh',
+      strings: {
+        zh: {
+          langBtnText: 'English',
+          langBtnTitle: 'Switch to English',
+          brandTitle: '區域網路雷達',
+          brandSubtitle: 'PROBE v2.1',
+          myIpPrefix: '本機 IP:',
+          myIpDetecting: '偵測中...',
+          engineIdle: '引擎閒置',
+          engineScanning: '掃描中',
+          engineComplete: '掃描完成',
+          engineStopped: '掃描已停止',
+          autoScanHeader: '自動掃描:',
+          scanParamsTitle: '掃描參數設定',
+          targetSubnetLabel: '目標網段 (/24 網段)',
+          reDetectIpBtn: '重新偵測本機 IP',
+          subnetHint: '將掃描 .1 至 .254 範圍',
+          targetPortLabel: '目標通訊埠 (Port)',
+          portHint: '預設 HTTP (80)',
+          timeoutLabel: '逾時時間 (毫秒)',
+          timeoutHint: '競態逾時門檻',
+          concurrencyLabel: '平行工作執行緒:',
+          concurrencyHint: '平衡掃描速度與瀏覽器連線佇列',
+          startScanBtn: '開始掃描',
+          abortBtn: '中斷掃描',
+          autoScanToggleLabel: '自動掃描 (持續監控)',
+          autoScanCountdownPrefix: '倒數',
+          autoScanIntervalLabel: '頻率:',
+          autoScanOption15s: '15 秒',
+          autoScanOption30s: '30 秒',
+          autoScanOption1m: '1 分鐘',
+          autoScanOption2m: '2 分鐘',
+          autoScanOption5m: '5 分鐘',
+          autoScanFootnote: '自動刷新設備清單與拓撲',
+          matrixTitle: '子網路矩陣 (254 台主機)',
+          matrixHoverDefault: '懸停節點以檢視詳細資訊',
+          matrixOffline: '離線',
+          matrixActive: '在線',
+          discoveredHostsTitle: '已發現主機清單',
+          discoveredHostsDesc: '即時顯示有回應的區域網路端點',
+          filterActiveOnly: '僅顯示在線',
+          statProgress: '掃描進度',
+          statActiveHosts: '在線主機',
+          statScanned: '已探測',
+          statElapsed: '耗費時間',
+          waitingLaunch: '等待啟動掃描...',
+          scanningSubnet: '正在掃描網段',
+          scanAbortedUser: '使用者中斷掃描',
+          scanFinishedSummary: '掃描巡檢結束（已探測 254 台主機）',
+          tabDiagram: '網路拓撲圖',
+          tabHostTable: '主機清單',
+          tabSplitView: '分割檢視',
+          btnMaximize: '最大化 (全螢幕)',
+          btnRestore: '還原視窗',
+          btnReset: '重設視角',
+          btnPause: '暫停運算',
+          btnResume: '繼續運算',
+          btnSavePng: '儲存 PNG',
+          legendGateway: '預設閘道 (.1)',
+          legendSelf: '本機 (YOU)',
+          legendActive: '在線主機',
+          thHost: '主機',
+          thIp: 'IP 位址',
+          thMac: 'MAC 位址',
+          thStatus: '狀態',
+          thReason: '訊號 / 偵測依據',
+          thRtt: '延遲',
+          thAction: '操作',
+          emptyTableIdle: '目前無掃描記錄。點擊「開始掃描」以啟動網段探測。',
+          emptyTableScanning: '掃描進行中... 正在搜尋區域網路設備...',
+          emptyTableNoHosts: '此網段未發現任何在線主機。',
+          btnOpenHttp: '開啟 HTTP',
+          badgeSelf: '本機',
+          badgeGw: '閘道',
+          statusOnline: '在線',
+          statusOffline: '離線',
+          nodeGatewayLabel: '預設閘道',
+          nodeSelfLabel: '本機裝置',
+          nodeActiveLabel: '在線端點',
+          tooltipRole: '角色:',
+          tooltipMac: 'MAC 位址:',
+          tooltipRtt: '延遲時間:',
+          tooltipSignal: '偵測訊號:',
+          tooltipDblClick: '(按兩下在瀏覽器中開啟)',
+          roleGateway: '預設閘道 / 路由器',
+          roleSelf: '本機作業系統介面',
+          roleEndpoint: '在線端點設備',
+          reasonLocalHost: '本機網路介面',
+          reasonIcmp: 'ICMP 回應 (Ping)',
+          reasonTcpRst: 'TCP RST (埠關閉，主機在線)',
+          reasonHttpReady: 'HTTP 服務正常回應',
+          reasonArpCache: 'ARP 表快取在線',
+          reasonTimeout: '連線逾時 (無回應)',
+          exportNoData: '目前無可匯出的掃描資料。'
+        },
+        en: {
+          langBtnText: '繁體中文',
+          langBtnTitle: '切換為繁體中文',
+          brandTitle: 'LAN Radar',
+          brandSubtitle: 'PROBE v2.1',
+          myIpPrefix: 'My IP:',
+          myIpDetecting: 'Detecting...',
+          engineIdle: 'Engine Idle',
+          engineScanning: 'Scanning',
+          engineComplete: 'Scan Complete',
+          engineStopped: 'Scan Stopped',
+          autoScanHeader: 'Auto Scan:',
+          scanParamsTitle: 'Scan Parameters',
+          targetSubnetLabel: 'Target Subnet (/24 Base)',
+          reDetectIpBtn: 'Re-detect Local IP',
+          subnetHint: 'Will scan range .1 to .254',
+          targetPortLabel: 'Target Port',
+          portHint: 'Default HTTP (80)',
+          timeoutLabel: 'Timeout (ms)',
+          timeoutHint: 'Strict race deadline',
+          concurrencyLabel: 'Parallel Workers:',
+          concurrencyHint: 'Balances scan velocity vs browser connection queuing',
+          startScanBtn: 'Start Scan',
+          abortBtn: 'Abort',
+          autoScanToggleLabel: 'Auto Scan (Continuous Sweep)',
+          autoScanCountdownPrefix: 'Next in',
+          autoScanIntervalLabel: 'Interval:',
+          autoScanOption15s: '15 seconds',
+          autoScanOption30s: '30 seconds',
+          autoScanOption1m: '1 minute',
+          autoScanOption2m: '2 minutes',
+          autoScanOption5m: '5 minutes',
+          autoScanFootnote: 'Auto-refreshes inventory',
+          matrixTitle: 'Subnet Matrix (254 Hosts)',
+          matrixHoverDefault: 'Hover a node',
+          matrixOffline: 'Offline',
+          matrixActive: 'Active',
+          discoveredHostsTitle: 'Discovered Hosts',
+          discoveredHostsDesc: 'Real-time inventory of responsive endpoints',
+          filterActiveOnly: 'Active Only',
+          statProgress: 'Progress',
+          statActiveHosts: 'Active Hosts',
+          statScanned: 'Scanned',
+          statElapsed: 'Elapsed',
+          waitingLaunch: 'Waiting for launch...',
+          scanningSubnet: 'Scanning subnet',
+          scanAbortedUser: 'Scan aborted by user',
+          scanFinishedSummary: 'Scan sweep finished (254 hosts evaluated)',
+          tabDiagram: 'IP Network Diagram',
+          tabHostTable: 'Host Table',
+          tabSplitView: 'Split View',
+          btnMaximize: 'Maximize (Fullscreen)',
+          btnRestore: 'Restore Window',
+          btnReset: 'Reset',
+          btnPause: 'Pause',
+          btnResume: 'Resume',
+          btnSavePng: 'Save PNG',
+          legendGateway: 'Gateway (.1)',
+          legendSelf: 'This Device (YOU)',
+          legendActive: 'Active Host',
+          thHost: 'Host',
+          thIp: 'IP Address',
+          thMac: 'MAC Address',
+          thStatus: 'Status',
+          thReason: 'Signal / Detection Reason',
+          thRtt: 'RTT',
+          thAction: 'Action',
+          emptyTableIdle: 'No active scan in progress. Click "Start Scan" to initiate subnet probing.',
+          emptyTableScanning: 'Sweep in progress... Searching for active network nodes...',
+          emptyTableNoHosts: 'No active hosts found matching criteria.',
+          btnOpenHttp: 'Open HTTP',
+          badgeSelf: 'YOU',
+          badgeGw: 'GW',
+          statusOnline: 'ACTIVE',
+          statusOffline: 'DEAD',
+          nodeGatewayLabel: 'Gateway',
+          nodeSelfLabel: 'This Device',
+          nodeActiveLabel: 'Active Host',
+          tooltipRole: 'Role:',
+          tooltipMac: 'MAC:',
+          tooltipRtt: 'RTT Latency:',
+          tooltipSignal: 'Signal:',
+          tooltipDblClick: '(Double-click node to open in browser)',
+          roleGateway: 'Default Gateway / Router',
+          roleSelf: 'Local Host Machine',
+          roleEndpoint: 'Discovered Active Endpoint',
+          reasonLocalHost: 'Local Host Interface',
+          reasonIcmp: 'ICMP Echo Reply',
+          reasonTcpRst: 'TCP RST (Port Closed, Host Online)',
+          reasonHttpReady: 'HTTP Service Ready',
+          reasonArpCache: 'ARP Cache Active',
+          reasonTimeout: 'Timeout Exceeded',
+          exportNoData: 'No scan data available to export.'
+        }
+      }
+    };
+
+    function t(key) {
+      const langDict = i18n.strings[i18n.currentLang] || i18n.strings.en;
+      return langDict[key] || i18n.strings.en[key] || key;
+    }
+
+    function localizeReason(rawReason) {
+      if (!rawReason) return t('statusOnline');
+      const r = String(rawReason).toLowerCase();
+      if (r.includes('this device') || r.includes('local host')) return t('reasonLocalHost');
+      if (r.includes('icmp') || r.includes('echo reply') || r.includes('ping')) return t('reasonIcmp');
+      if (r.includes('rst') || r.includes('refused')) return t('reasonTcpRst');
+      if (r.includes('http') || r.includes('opaque') || r.includes('ready')) return t('reasonHttpReady');
+      if (r.includes('arp')) return t('reasonArpCache');
+      if (r.includes('timeout')) return t('reasonTimeout');
+      return rawReason;
+    }
+
+    function setLanguage(lang) {
+      if (!i18n.strings[lang]) lang = 'zh';
+      i18n.currentLang = lang;
+      try {
+        localStorage.setItem('ipscanner_lang', lang);
+      } catch (e) {}
+
+      // Update switcher text and tooltip
+      const switchText = document.getElementById('langSwitchText');
+      if (switchText) switchText.innerText = t('langBtnText');
+      const switchBtn = document.getElementById('langSwitchBtn');
+      if (switchBtn) switchBtn.title = t('langBtnTitle');
+
+      // Update all elements with data-i18n
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.getAttribute('data-i18n');
+        if (k) el.innerText = t(k);
+      });
+
+      // Update dynamic elements
+      updateDynamicI18n();
+    }
+
+    function toggleLanguage() {
+      const next = i18n.currentLang === 'zh' ? 'en' : 'zh';
+      setLanguage(next);
+    }
+
+    function updateDynamicI18n() {
+      // Status text
+      const statusText = document.getElementById('globalStatusText');
+      if (statusText) {
+        if (state.isScanning) {
+          statusText.innerText = `${t('scanningSubnet')} ${state.subnetBase}.0/24...`;
+        } else if (state.results.size > 0) {
+          const activeCount = Array.from(state.results.values()).filter(r => r.active).length;
+          statusText.innerText = `${t('engineComplete')}: ${activeCount} ${t('statActiveHosts')}`;
+        } else {
+          statusText.innerText = t('engineIdle');
+        }
+      }
+
+      // Diagram controls
+      const maxText = document.getElementById('maximizeBtnText');
+      if (maxText) {
+        const isMax = document.getElementById('diagramSection')?.classList.contains('maximized');
+        maxText.innerText = isMax ? t('btnRestore') : t('btnMaximize');
+      }
+      const physText = document.getElementById('physicsBtnText');
+      if (physText) {
+        physText.innerText = diagramState.physicsEnabled ? t('btnPause') : t('btnResume');
+      }
+
+      // Refresh diagram labels & table
+      syncDiagramNodes(false);
+      renderTable();
+      updateAutoScanUI();
+    }
+
     /**
      * Scanner State & Configuration
      */
@@ -1300,7 +1606,7 @@
 
         if (state.myHostNum && i === state.myHostNum) {
           cell.classList.add('is-self');
-          cell.title = `Host .${i} (This Device - ${state.myIP})`;
+          cell.title = `Host .${i} (${t('nodeSelfLabel')} - ${state.myIP})`;
         } else {
           cell.title = `Host .${i}`;
         }
@@ -1308,9 +1614,9 @@
         cell.addEventListener('mouseenter', () => {
           const ip = `${state.subnetBase}.${i}`;
           const res = state.results.get(ip);
-          const isSelfTag = (state.myIP && ip === state.myIP) ? ' [THIS DEVICE]' : '';
+          const isSelfTag = (state.myIP && ip === state.myIP) ? ` [${t('badgeSelf')}]` : '';
           const macTag = res && res.mac ? ` [${res.mac}]` : '';
-          const statusText = res ? (res.active ? `ACTIVE (${res.latency}ms)` : 'Dead') : 'Unscanned';
+          const statusText = res ? (res.active ? `${t('statusOnline')} (${res.latency}ms)` : t('statusOffline')) : (i18n.currentLang === 'zh' ? '未掃描' : 'Unscanned');
           document.getElementById('matrixHoveredIP').innerText = `${ip}${isSelfTag}${macTag}: ${statusText}`;
         });
         grid.appendChild(cell);
@@ -1447,7 +1753,7 @@
 
       const dot = document.getElementById('globalStatusDot');
       dot.className = 'pulse-dot scanning';
-      document.getElementById('globalStatusText').innerText = `Scanning ${state.subnetBase}.0/24...`;
+      document.getElementById('globalStatusText').innerText = `${t('scanningSubnet')} ${state.subnetBase}.0/24...`;
 
       // Start elapsed timer
       clearInterval(state.timerInterval);
@@ -1616,11 +1922,11 @@
       
       const activeCount = Array.from(state.results.values()).filter(r => r.active).length;
       if (aborted) {
-        document.getElementById('globalStatusText').innerText = `Scan Stopped (${activeCount} hosts discovered)`;
-        document.getElementById('currentScanningLabel').innerText = 'Scan aborted by user';
+        document.getElementById('globalStatusText').innerText = `${t('engineStopped')} (${activeCount} ${t('statActiveHosts')})`;
+        document.getElementById('currentScanningLabel').innerText = t('scanAbortedUser');
       } else {
-        document.getElementById('globalStatusText').innerText = `Scan Complete: ${activeCount} hosts found`;
-        document.getElementById('currentScanningLabel').innerText = 'Scan sweep finished (254 hosts evaluated)';
+        document.getElementById('globalStatusText').innerText = `${t('engineComplete')}: ${activeCount} ${t('statActiveHosts')}`;
+        document.getElementById('currentScanningLabel').innerText = t('scanFinishedSummary');
         document.getElementById('progressBar').style.width = '100%';
         document.getElementById('statProgress').innerText = '100%';
       }
@@ -1669,7 +1975,7 @@
             <tr>
               <td colspan="7">
                 <div class="empty-state">
-                  <p>Sweep in progress... Searching for active network nodes...</p>
+                  <p>${t('emptyTableScanning')}</p>
                 </div>
               </td>
             </tr>
@@ -1680,7 +1986,7 @@
               <td colspan="7">
                 <div class="empty-state">
                   <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                  <p>${filterActive && state.results.size > 0 ? 'No active hosts found on this subnet.' : 'No records to display.'}</p>
+                  <p>${filterActive && state.results.size > 0 ? t('emptyTableNoHosts') : t('emptyTableIdle')}</p>
                 </div>
               </td>
             </tr>
@@ -1692,11 +1998,11 @@
       let html = '';
       for (const item of items) {
         const badgeClass = item.active ? 'badge-success' : 'badge-secondary';
-        const badgeText = item.active ? 'ACTIVE' : 'DEAD';
+        const badgeText = item.active ? t('statusOnline') : t('statusOffline');
         const latencyText = item.active ? `${item.latency} ms` : '—';
         const isSelf = Boolean(state.myIP && item.ip === state.myIP);
         const thisDeviceBadge = isSelf
-          ? `<span class="badge" style="background:rgba(56,189,248,0.15);border:1px solid #38bdf8;color:#38bdf8;margin-left:6px;">THIS DEVICE</span>`
+          ? `<span class="badge" style="background:rgba(56,189,248,0.15);border:1px solid #38bdf8;color:#38bdf8;margin-left:6px;">${t('badgeSelf')}</span>`
           : '';
         const macDisplay = item.mac ? `<span style="font-family: var(--font-mono); font-size: 0.8rem; color: #93c5fd;">${item.mac}</span>` : '<span style="color:var(--text-dim);">—</span>';
 
@@ -1711,12 +2017,12 @@
                 ${badgeText}
               </span>
             </td>
-            <td style="font-size: 0.825rem; color: ${item.active ? '#a7f3d0' : '#6b7280'};">${item.reason}</td>
+            <td style="font-size: 0.825rem; color: ${item.active ? '#a7f3d0' : '#6b7280'};">${localizeReason(item.reason)}</td>
             <td class="rtt-cell">${latencyText}</td>
             <td style="text-align: right;">
               ${item.active ? `
                 <a href="http://${item.ip}:${item.port}" target="_blank" rel="noopener noreferrer" class="action-link" title="Open HTTP interface in browser">
-                  Open HTTP
+                  ${t('btnOpenHttp')}
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3m-2 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z"/></svg>
                 </a>
               ` : '—'}
@@ -1736,7 +2042,7 @@
         await new Promise(r => setTimeout(r, 200));
       }
 
-      document.getElementById('detectedMyIP').innerText = 'Detecting...';
+      document.getElementById('detectedMyIP').innerText = t('myIpDetecting');
       const net = await detectLocalNetwork();
 
       if (net.ip) {
@@ -1761,7 +2067,7 @@
     function exportResults(format) {
       const items = Array.from(state.results.values()).sort((a, b) => a.hostNum - b.hostNum);
       if (items.length === 0) {
-        alert('No scan data available to export.');
+        alert(t('exportNoData'));
         return;
       }
 
@@ -1974,13 +2280,13 @@
       if (!tooltip || !title || !body) return;
 
       title.innerText = node.label;
-      const typeDesc = node.type === 'gateway' ? 'Default Gateway / Router' : (node.type === 'self' ? 'Local Host Machine' : 'Discovered Active Endpoint');
+      const typeDesc = node.type === 'gateway' ? t('roleGateway') : (node.type === 'self' ? t('roleSelf') : t('roleEndpoint'));
       body.innerHTML = `
-        <div>Role: <strong style="color:#ffffff;">${typeDesc}</strong></div>
-        <div>MAC: <strong style="color:#93c5fd; font-family:var(--font-mono);">${node.mac || '—'}</strong></div>
-        <div>RTT Latency: <strong style="color:#fbbf24;">${node.rtt ? node.rtt + ' ms' : 'N/A'}</strong></div>
-        <div>Signal: <span style="color:#a7f3d0;">${node.reason || 'Active'}</span></div>
-        <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">(Double-click node to open in browser)</div>
+        <div>${t('tooltipRole')} <strong style="color:#ffffff;">${typeDesc}</strong></div>
+        <div>${t('tooltipMac')} <strong style="color:#93c5fd; font-family:var(--font-mono);">${node.mac || '—'}</strong></div>
+        <div>${t('tooltipRtt')} <strong style="color:#fbbf24;">${node.rtt ? node.rtt + ' ms' : 'N/A'}</strong></div>
+        <div>${t('tooltipSignal')} <span style="color:#a7f3d0;">${localizeReason(node.reason)}</span></div>
+        <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">${t('tooltipDblClick')}</div>
       `;
       tooltip.style.left = `${screenX}px`;
       tooltip.style.top = `${screenY}px`;
@@ -2022,11 +2328,11 @@
       const isMax = section.classList.toggle('maximized');
 
       if (isMax) {
-        if (maxText) maxText.innerText = '縮小 (Restore)';
+        if (maxText) maxText.innerText = t('btnRestore');
         if (iconPath) iconPath.setAttribute('d', 'M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z');
         document.body.style.overflow = 'hidden';
       } else {
-        if (maxText) maxText.innerText = '最大化 (Fullscreen)';
+        if (maxText) maxText.innerText = t('btnMaximize');
         if (iconPath) iconPath.setAttribute('d', 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z');
         document.body.style.overflow = '';
       }
@@ -2041,7 +2347,7 @@
       diagramState.physicsEnabled = !diagramState.physicsEnabled;
       const btnText = document.getElementById('physicsBtnText');
       if (btnText) {
-        btnText.innerText = diagramState.physicsEnabled ? 'Pause' : 'Resume';
+        btnText.innerText = diagramState.physicsEnabled ? t('btnPause') : t('btnResume');
       }
     }
 
@@ -2103,32 +2409,38 @@
           targetY: 0,
           radius: 26,
           color: '#f59e0b',
-          label: `Gateway (${gwIP})`,
+          label: `${t('nodeGatewayLabel')} (${gwIP})`,
           badge: 'GW',
           pulsePhase: 0,
           rtt: 1
         });
+      } else {
+        diagramState.nodes.get(gwIP).label = `${t('nodeGatewayLabel')} (${gwIP})`;
       }
 
       // 2. This Device
-      if (state.myIP && !diagramState.nodes.has(state.myIP)) {
-        diagramState.nodes.set(state.myIP, {
-          id: state.myIP,
-          ip: state.myIP,
-          hostNum: state.myHostNum || 20,
-          type: 'self',
-          x: 0,
-          y: -140,
-          targetX: 0,
-          targetY: -140,
-          radius: 23,
-          color: '#38bdf8',
-          label: `This Device (${state.myIP})`,
-          badge: 'YOU',
-          pulsePhase: 0.5,
-          rtt: 1,
-          reason: 'Local Host Interface'
-        });
+      if (state.myIP) {
+        if (!diagramState.nodes.has(state.myIP)) {
+          diagramState.nodes.set(state.myIP, {
+            id: state.myIP,
+            ip: state.myIP,
+            hostNum: state.myHostNum || 20,
+            type: 'self',
+            x: 0,
+            y: -140,
+            targetX: 0,
+            targetY: -140,
+            radius: 23,
+            color: '#38bdf8',
+            label: `${t('nodeSelfLabel')} (${state.myIP})`,
+            badge: 'YOU',
+            pulsePhase: 0.5,
+            rtt: 1,
+            reason: t('reasonLocalHost')
+          });
+        } else {
+          diagramState.nodes.get(state.myIP).label = `${t('nodeSelfLabel')} (${state.myIP})`;
+        }
       }
 
       // 3. Active Discovered Hosts
@@ -2352,6 +2664,15 @@
 
     // Auto-detect IP and start sweep on page load
     window.addEventListener('DOMContentLoaded', async () => {
+      // Initialize Language (Default to Traditional Chinese 'zh' or saved preference)
+      try {
+        const savedLang = localStorage.getItem('ipscanner_lang');
+        const initialLang = savedLang || 'zh';
+        setLanguage(initialLang);
+      } catch (e) {
+        setLanguage('zh');
+      }
+
       initDiagram();
       if (window.location.protocol === 'https:') {
         const warning = document.getElementById('httpsWarning');
