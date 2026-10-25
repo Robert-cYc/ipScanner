@@ -476,6 +476,12 @@
       opacity: 0.5;
     }
 
+    .node-cell.out-of-range {
+      opacity: 0.18 !important;
+      filter: grayscale(1) !important;
+      cursor: not-allowed;
+    }
+
     /* View Tabs & Diagram Controls */
     .view-tabs {
       display: flex;
@@ -595,6 +601,16 @@
       background: #1f2937;
       color: #ffffff;
       border-color: var(--primary);
+    }
+
+    select.diagram-ctrl-btn {
+      appearance: auto;
+      outline: none;
+      padding-right: 0.5rem;
+    }
+    select.diagram-ctrl-btn option {
+      background: #0f172a;
+      color: #e2e8f0;
     }
 
     .diagram-legend {
@@ -890,32 +906,59 @@
             <div class="hint" id="subnetHintText"><span data-i18n="subnetHint">Will scan range .1 to .254</span></div>
           </div>
 
+          <!-- Port Selection with Presets -->
           <div class="form-row">
             <div class="form-group">
+              <label for="portPresetSelect" data-i18n="portPresetLabel">Port Profile / Preset</label>
+              <select id="portPresetSelect" class="form-control" onchange="onPortPresetChange(this.value)">
+                <option value="80" selected data-i18n="presetHttp">Web HTTP (80)</option>
+                <option value="443" data-i18n="presetHttps">Web HTTPS (443)</option>
+                <option value="22" data-i18n="presetSsh">SSH Remote (22)</option>
+                <option value="445" data-i18n="presetSmb">SMB File Share (445)</option>
+                <option value="3389" data-i18n="presetRdp">RDP Windows Desktop (3389)</option>
+                <option value="8080" data-i18n="presetAltHttp">Alt Web (8080)</option>
+                <option value="554" data-i18n="presetRtsp">RTSP Camera (554)</option>
+                <option value="custom" data-i18n="presetCustom">Custom Port...</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label for="portInput" data-i18n="targetPortLabel">Target Port</label>
-              <input type="number" id="portInput" class="form-control" value="80" min="1" max="65535">
+              <input type="number" id="portInput" class="form-control" value="80" min="1" max="65535" oninput="onCustomPortInput()">
               <div class="hint" data-i18n="portHint">Default HTTP (80)</div>
             </div>
+          </div>
+
+          <!-- Host Range Selection -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="rangeStartInput" data-i18n="rangeStartLabel">Start Host (.1 - .254)</label>
+              <input type="number" id="rangeStartInput" class="form-control" value="1" min="1" max="254" oninput="updateRangePreview()">
+            </div>
+            <div class="form-group">
+              <label for="rangeEndInput" data-i18n="rangeEndLabel">End Host (.1 - .254)</label>
+              <input type="number" id="rangeEndInput" class="form-control" value="254" min="1" max="254" oninput="updateRangePreview()">
+            </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-group">
               <label for="timeoutInput" data-i18n="timeoutLabel">Timeout (ms)</label>
               <input type="number" id="timeoutInput" class="form-control" value="1200" min="300" max="5000" step="100">
               <div class="hint" data-i18n="timeoutHint">Strict race deadline</div>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label for="concurrencyInput"><span data-i18n="concurrencyLabel">Parallel Workers:</span> <span id="concurrencyVal" style="color:#60a5fa; font-weight:600;">20</span></label>
-            <input 
-              type="range" 
-              id="concurrencyInput" 
-              min="5" 
-              max="50" 
-              value="20" 
-              step="5"
-              style="width: 100%; accent-color: var(--primary);"
-              oninput="document.getElementById('concurrencyVal').innerText = this.value"
-            >
-            <div class="hint" data-i18n="concurrencyHint">Balances scan velocity vs browser connection queuing</div>
+            <div class="form-group">
+              <label for="concurrencyInput"><span data-i18n="concurrencyLabel">Parallel Workers:</span> <span id="concurrencyVal" style="color:#60a5fa; font-weight:600;">20</span></label>
+              <input 
+                type="range" 
+                id="concurrencyInput" 
+                min="5" 
+                max="50" 
+                value="20" 
+                step="5"
+                style="width: 100%; accent-color: var(--primary); margin-top: 0.35rem;"
+                oninput="document.getElementById('concurrencyVal').innerText = this.value"
+              >
+            </div>
           </div>
 
           <div class="btn-group">
@@ -1045,6 +1088,12 @@
 
           <!-- Overlay Controls -->
           <div class="diagram-overlay-controls">
+            <select id="diagramThemeSelect" class="diagram-ctrl-btn" onchange="setDiagramTheme(this.value)" title="Theme Selector">
+              <option value="neon" selected data-i18n="themeNeon">🎨 Cyberpunk Neon</option>
+              <option value="matrix" data-i18n="themeMatrix">💻 Matrix Terminal</option>
+              <option value="space" data-i18n="themeSpace">🌌 Deep Space Navy</option>
+              <option value="obsidian" data-i18n="themeObsidian">⚡ Clean Obsidian</option>
+            </select>
             <button type="button" class="diagram-ctrl-btn" id="maximizeBtn" onclick="toggleMaximizeDiagram()" title="Toggle Fullscreen / Maximize">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                 <path id="maximizeIconPath" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
@@ -1068,16 +1117,19 @@
           <!-- Diagram Legend -->
           <div class="diagram-legend">
             <div class="legend-item">
-              <span class="legend-dot" style="background: #f59e0b;"></span>
+              <span class="legend-dot" id="legendDotGw" style="background: #f59e0b;"></span>
               <span data-i18n="legendGateway">Gateway (.1)</span>
             </div>
             <div class="legend-item">
-              <span class="legend-dot" style="background: #38bdf8;"></span>
+              <span class="legend-dot" id="legendDotSelf" style="background: #38bdf8;"></span>
               <span data-i18n="legendSelf">This Device</span>
             </div>
             <div class="legend-item">
-              <span class="legend-dot" style="background: #10b981;"></span>
+              <span class="legend-dot" id="legendDotActive" style="background: #10b981;"></span>
               <span data-i18n="legendActive">Active Host</span>
+            </div>
+            <div class="legend-item" style="border-left: 1px solid rgba(255,255,255,0.15); padding-left: 0.5rem;">
+              <span style="font-size: 0.7rem; color: #94a3b8;" data-i18n="legendRings">Radar Rings: RTT Latency (&lt;5ms / &lt;20ms / 20ms+)</span>
             </div>
           </div>
 
@@ -1218,7 +1270,23 @@
           reasonHttpReady: 'HTTP 服務正常回應',
           reasonArpCache: 'ARP 表快取在線',
           reasonTimeout: '連線逾時 (無回應)',
-          exportNoData: '目前無可匯出的掃描資料。'
+          exportNoData: '目前無可匯出的掃描資料。',
+          portPresetLabel: '通訊埠範本 / 常用設定',
+          presetHttp: '網站 HTTP (80)',
+          presetHttps: '安全網站 HTTPS (443)',
+          presetSsh: 'SSH 遠端管理 (22)',
+          presetSmb: '網路芳鄰 / NAS 檔案分享 (445)',
+          presetRdp: 'Windows 遠端桌面 (3389)',
+          presetAltHttp: '替代網頁埠 (8080)',
+          presetRtsp: '網路攝影機串流 RTSP (554)',
+          presetCustom: '自訂通訊埠...',
+          rangeStartLabel: '起始主機號 (.1 - .254)',
+          rangeEndLabel: '結束主機號 (.1 - .254)',
+          legendRings: '雷達環: 延遲分層 (<5ms / <20ms / 20ms+)',
+          themeNeon: '🎨 賽博朋克霓虹 (Neon)',
+          themeMatrix: '💻 駭客終端綠 (Matrix)',
+          themeSpace: '🌌 深空星雲藍 (Space)',
+          themeObsidian: '⚡ 黑曜石極簡 (Obsidian)'
         },
         en: {
           langBtnText: '繁體中文',
@@ -1312,7 +1380,23 @@
           reasonHttpReady: 'HTTP Service Ready',
           reasonArpCache: 'ARP Cache Active',
           reasonTimeout: 'Timeout Exceeded',
-          exportNoData: 'No scan data available to export.'
+          exportNoData: 'No scan data available to export.',
+          portPresetLabel: 'Port Profile / Preset',
+          presetHttp: 'Web HTTP (80)',
+          presetHttps: 'Web HTTPS (443)',
+          presetSsh: 'SSH Remote (22)',
+          presetSmb: 'SMB File Share (445)',
+          presetRdp: 'RDP Windows Desktop (3389)',
+          presetAltHttp: 'Alt Web (8080)',
+          presetRtsp: 'RTSP Camera (554)',
+          presetCustom: 'Custom Port...',
+          rangeStartLabel: 'Start Host (.1 - .254)',
+          rangeEndLabel: 'End Host (.1 - .254)',
+          legendRings: 'Radar Rings: RTT Latency (<5ms / <20ms / 20ms+)',
+          themeNeon: '🎨 Cyberpunk Neon',
+          themeMatrix: '💻 Matrix Terminal',
+          themeSpace: '🌌 Deep Space Navy',
+          themeObsidian: '⚡ Clean Obsidian'
         }
       }
     };
@@ -1390,6 +1474,7 @@
       // Refresh diagram labels & table
       syncDiagramNodes(false);
       renderTable();
+      updateRangePreview();
       updateAutoScanUI();
     }
 
@@ -1407,6 +1492,7 @@
       targetPort: 80,
       timeoutMs: 1200,
       concurrency: 20,
+      totalHosts: 254,
       results: new Map(), // key: ip, value: { ip, hostNum, active, reason, latency, timestamp }
       activeControllers: new Set()
     };
@@ -1594,6 +1680,70 @@
       };
     }
 
+    /**
+     * Port Presets & Custom Port Handlers
+     */
+    function onPortPresetChange(val) {
+      const portInput = document.getElementById('portInput');
+      if (val === 'custom') {
+        portInput.focus();
+        portInput.select();
+      } else {
+        const portNum = parseInt(val, 10);
+        if (portNum && !isNaN(portNum)) {
+          portInput.value = portNum;
+          state.targetPort = portNum;
+        }
+      }
+    }
+
+    function onCustomPortInput() {
+      const portInput = document.getElementById('portInput');
+      const presetSelect = document.getElementById('portPresetSelect');
+      const val = portInput.value.trim();
+      let matched = false;
+      for (let i = 0; i < presetSelect.options.length; i++) {
+        if (presetSelect.options[i].value === val) {
+          presetSelect.selectedIndex = i;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        presetSelect.value = 'custom';
+      }
+    }
+
+    /**
+     * Host Range Handlers
+     */
+    function getHostRange() {
+      const startEl = document.getElementById('rangeStartInput');
+      const endEl = document.getElementById('rangeEndInput');
+      let start = parseInt(startEl?.value, 10) || 1;
+      let end = parseInt(endEl?.value, 10) || 254;
+      start = Math.max(1, Math.min(254, start));
+      end = Math.max(start, Math.min(254, end));
+      return { start, end };
+    }
+
+    function updateRangePreview() {
+      const { start, end } = getHostRange();
+      const hint = document.getElementById('subnetHintText');
+      if (hint) {
+        hint.innerHTML = `<span>${t('subnetHint')}: <code>.${start}</code> ~ <code>.${end}</code> (${end - start + 1} hosts)</span>`;
+      }
+      for (let i = 1; i <= 254; i++) {
+        const cell = document.getElementById(`matrix-node-${i}`);
+        if (!cell) continue;
+        if (i < start || i > end) {
+          cell.classList.add('out-of-range');
+        } else {
+          cell.classList.remove('out-of-range');
+        }
+      }
+    }
+
     // Initialize Subnet Matrix UI (1..254)
     function initMatrix() {
       const grid = document.getElementById('matrixGrid');
@@ -1621,6 +1771,7 @@
         });
         grid.appendChild(cell);
       }
+      updateRangePreview();
     }
 
     /**
@@ -1748,6 +1899,12 @@
       document.getElementById('stopBtn').disabled = false;
       document.getElementById('subnetInput').disabled = true;
       document.getElementById('portInput').disabled = true;
+      const portPresetEl = document.getElementById('portPresetSelect');
+      if (portPresetEl) portPresetEl.disabled = true;
+      const rangeStartEl = document.getElementById('rangeStartInput');
+      if (rangeStartEl) rangeStartEl.disabled = true;
+      const rangeEndEl = document.getElementById('rangeEndInput');
+      if (rangeEndEl) rangeEndEl.disabled = true;
       document.getElementById('timeoutInput').disabled = true;
       document.getElementById('concurrencyInput').disabled = true;
 
@@ -1808,11 +1965,14 @@
         }
       })();
 
-      // Build task queue (1..254)
+      // Build task queue from configured host range
+      const { start: rangeStart, end: rangeEnd } = getHostRange();
       const hostQueue = [];
-      for (let i = 1; i <= 254; i++) {
+      for (let i = rangeStart; i <= rangeEnd; i++) {
         hostQueue.push(i);
       }
+      const totalHosts = hostQueue.length;
+      state.totalHosts = totalHosts;
 
       let scannedCount = 0;
 
@@ -1865,11 +2025,11 @@
 
           // Telemetry updates
           const activeCount = Array.from(state.results.values()).filter(r => r.active).length;
-          const pct = Math.round((scannedCount / 254) * 100);
+          const pct = Math.round((scannedCount / totalHosts) * 100);
           document.getElementById('progressBar').style.width = `${pct}%`;
           document.getElementById('progressPctText').innerText = `${pct}%`;
           document.getElementById('statProgress').innerText = `${pct}%`;
-          document.getElementById('statScanned').innerText = `${scannedCount} / 254`;
+          document.getElementById('statScanned').innerText = `${scannedCount} / ${totalHosts}`;
           document.getElementById('statActive').innerText = activeCount;
 
           renderTable();
@@ -1914,6 +2074,12 @@
       document.getElementById('stopBtn').disabled = true;
       document.getElementById('subnetInput').disabled = false;
       document.getElementById('portInput').disabled = false;
+      const portPresetEl = document.getElementById('portPresetSelect');
+      if (portPresetEl) portPresetEl.disabled = false;
+      const rangeStartEl = document.getElementById('rangeStartInput');
+      if (rangeStartEl) rangeStartEl.disabled = false;
+      const rangeEndEl = document.getElementById('rangeEndInput');
+      if (rangeEndEl) rangeEndEl.disabled = false;
       document.getElementById('timeoutInput').disabled = false;
       document.getElementById('concurrencyInput').disabled = false;
 
@@ -1926,7 +2092,7 @@
         document.getElementById('currentScanningLabel').innerText = t('scanAbortedUser');
       } else {
         document.getElementById('globalStatusText').innerText = `${t('engineComplete')}: ${activeCount} ${t('statActiveHosts')}`;
-        document.getElementById('currentScanningLabel').innerText = t('scanFinishedSummary');
+        document.getElementById('currentScanningLabel').innerText = t('scanFinishedSummary').replace('254', (state.totalHosts || 254));
         document.getElementById('progressBar').style.width = '100%';
         document.getElementById('statProgress').innerText = '100%';
       }
@@ -2103,12 +2269,104 @@
     }
 
     /**
+     * IP Network Topology Visual Themes
+     */
+    const diagramThemes = {
+      neon: {
+        id: 'neon',
+        bg: '#080d1a',
+        grid: 'rgba(30, 41, 59, 0.35)',
+        ring: 'rgba(56, 189, 248, 0.16)',
+        ringLabel: 'rgba(56, 189, 248, 0.65)',
+        radarSweep: 'rgba(56, 189, 248, 0.15)',
+        gateway: '#f59e0b',
+        self: '#38bdf8',
+        host: '#10b981',
+        linkSelf: 'rgba(56, 189, 248, 0.50)',
+        linkHost: 'rgba(16, 185, 129, 0.38)',
+        nodeBgStart: '#1e293b',
+        nodeBgEnd: '#0f172a'
+      },
+      matrix: {
+        id: 'matrix',
+        bg: '#021206',
+        grid: 'rgba(20, 83, 45, 0.35)',
+        ring: 'rgba(34, 197, 94, 0.22)',
+        ringLabel: 'rgba(74, 222, 128, 0.75)',
+        radarSweep: 'rgba(34, 197, 94, 0.18)',
+        gateway: '#eab308',
+        self: '#4ade80',
+        host: '#22c55e',
+        linkSelf: 'rgba(74, 222, 128, 0.55)',
+        linkHost: 'rgba(34, 197, 94, 0.40)',
+        nodeBgStart: '#064e3b',
+        nodeBgEnd: '#022c22'
+      },
+      space: {
+        id: 'space',
+        bg: '#070a1e',
+        grid: 'rgba(99, 102, 241, 0.25)',
+        ring: 'rgba(168, 85, 247, 0.20)',
+        ringLabel: 'rgba(192, 132, 252, 0.70)',
+        radarSweep: 'rgba(168, 85, 247, 0.15)',
+        gateway: '#fbbf24',
+        self: '#a855f7',
+        host: '#60a5fa',
+        linkSelf: 'rgba(168, 85, 247, 0.50)',
+        linkHost: 'rgba(96, 165, 250, 0.38)',
+        nodeBgStart: '#1e1b4b',
+        nodeBgEnd: '#0f172a'
+      },
+      obsidian: {
+        id: 'obsidian',
+        bg: '#090a0f',
+        grid: 'rgba(255, 255, 255, 0.08)',
+        ring: 'rgba(255, 255, 255, 0.14)',
+        ringLabel: 'rgba(203, 213, 225, 0.55)',
+        radarSweep: 'rgba(255, 255, 255, 0.10)',
+        gateway: '#f8fafc',
+        self: '#38bdf8',
+        host: '#94a3b8',
+        linkSelf: 'rgba(56, 189, 248, 0.45)',
+        linkHost: 'rgba(148, 163, 184, 0.35)',
+        nodeBgStart: '#18181b',
+        nodeBgEnd: '#09090b'
+      }
+    };
+
+    function setDiagramTheme(themeKey) {
+      if (!diagramThemes[themeKey]) themeKey = 'neon';
+      diagramState.currentTheme = themeKey;
+      try {
+        localStorage.setItem('ipscanner_theme', themeKey);
+      } catch (e) {}
+
+      const select = document.getElementById('diagramThemeSelect');
+      if (select && select.value !== themeKey) select.value = themeKey;
+
+      const theme = diagramThemes[themeKey];
+      const dotGw = document.getElementById('legendDotGw');
+      const dotSelf = document.getElementById('legendDotSelf');
+      const dotActive = document.getElementById('legendDotActive');
+      if (dotGw) dotGw.style.background = theme.gateway;
+      if (dotSelf) dotSelf.style.background = theme.self;
+      if (dotActive) dotActive.style.background = theme.host;
+
+      for (const node of diagramState.nodes.values()) {
+        if (node.type === 'gateway') node.color = theme.gateway;
+        else if (node.type === 'self') node.color = theme.self;
+        else node.color = theme.host;
+      }
+    }
+
+    /**
      * IP Network Topology Diagram Engine
      */
     const diagramState = {
       canvas: null,
       ctx: null,
       viewMode: 'diagram',
+      currentTheme: 'neon',
       width: 0,
       height: 0,
       panX: 0,
@@ -2395,6 +2653,7 @@
 
     function syncDiagramNodes(pruneDead = !state.isScanning) {
       const gwIP = `${state.subnetBase}.1`;
+      const theme = diagramThemes[diagramState.currentTheme || 'neon'] || diagramThemes.neon;
 
       // 1. Gateway (.1)
       if (!diagramState.nodes.has(gwIP)) {
@@ -2408,14 +2667,16 @@
           targetX: 0,
           targetY: 0,
           radius: 26,
-          color: '#f59e0b',
+          color: theme.gateway,
           label: `${t('nodeGatewayLabel')} (${gwIP})`,
           badge: 'GW',
           pulsePhase: 0,
           rtt: 1
         });
       } else {
-        diagramState.nodes.get(gwIP).label = `${t('nodeGatewayLabel')} (${gwIP})`;
+        const gwNode = diagramState.nodes.get(gwIP);
+        gwNode.label = `${t('nodeGatewayLabel')} (${gwIP})`;
+        gwNode.color = theme.gateway;
       }
 
       // 2. This Device
@@ -2431,7 +2692,7 @@
             targetX: 0,
             targetY: -140,
             radius: 23,
-            color: '#38bdf8',
+            color: theme.self,
             label: `${t('nodeSelfLabel')} (${state.myIP})`,
             badge: 'YOU',
             pulsePhase: 0.5,
@@ -2439,7 +2700,9 @@
             reason: t('reasonLocalHost')
           });
         } else {
-          diagramState.nodes.get(state.myIP).label = `${t('nodeSelfLabel')} (${state.myIP})`;
+          const selfNode = diagramState.nodes.get(state.myIP);
+          selfNode.label = `${t('nodeSelfLabel')} (${state.myIP})`;
+          selfNode.color = theme.self;
         }
       }
 
@@ -2477,7 +2740,7 @@
             targetX: 0,
             targetY: 0,
             radius: 19,
-            color: '#10b981',
+            color: theme.host,
             label: item.ip,
             badge: `.${item.hostNum}`,
             rtt: item.latency,
@@ -2494,23 +2757,30 @@
         }
       });
 
-      // Calculate Orbital Target Coordinates
+      // Calculate Orbital Target Coordinates based on Latency Radial Tiers
       const totalOrbital = orbitalHosts.length;
       orbitalHosts.forEach((item, idx) => {
         const node = diagramState.nodes.get(item.ip);
         if (!node || node.isCustomPos) return;
 
-        let orbitRadius = 145;
-        let angleStep = (2 * Math.PI) / Math.max(1, totalOrbital);
-        let angle = idx * angleStep + diagramState.orbitAngle;
+        node.color = theme.host;
 
-        if (totalOrbital > 10) {
-          const ring = idx % 2;
-          orbitRadius = ring === 0 ? 115 : 175;
+        // Radial orbit based on latency
+        let baseRadius = 160;
+        const rtt = node.rtt || item.latency || 10;
+        if (rtt <= 5) {
+          baseRadius = 95 + ((item.hostNum % 3) - 1) * 8;
+        } else if (rtt <= 20) {
+          baseRadius = 160 + ((item.hostNum % 4) - 1.5) * 10;
+        } else {
+          baseRadius = 230 + ((item.hostNum % 4) - 1.5) * 12;
         }
 
-        node.targetX = Math.cos(angle) * orbitRadius;
-        node.targetY = Math.sin(angle) * orbitRadius;
+        const angleStep = (2 * Math.PI) / Math.max(1, totalOrbital);
+        const angle = idx * angleStep + diagramState.orbitAngle;
+
+        node.targetX = Math.cos(angle) * baseRadius;
+        node.targetY = Math.sin(angle) * baseRadius;
       });
     }
 
@@ -2524,6 +2794,7 @@
       const dpr = window.devicePixelRatio || 1;
       const w = diagramState.width;
       const h = diagramState.height;
+      const theme = diagramThemes[diagramState.currentTheme || 'neon'];
 
       if (diagramState.physicsEnabled) {
         diagramState.orbitAngle += 0.003;
@@ -2534,16 +2805,18 @@
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, w, h);
 
+      // Background fill based on active theme
+      ctx.fillStyle = theme.bg;
+      ctx.fillRect(0, 0, w, h);
+
       const cx = w / 2;
       const cy = h / 2;
       const gridSize = 40 * diagramState.zoom;
       const offsetX = (cx + diagramState.panX) % gridSize;
       const offsetY = (cy + diagramState.panY) % gridSize;
 
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.strokeStyle = 'rgba(30, 41, 59, 0.35)';
+      // Draw Subtle Background Grid
+      ctx.strokeStyle = theme.grid;
       ctx.lineWidth = 0.5;
       ctx.beginPath();
       for (let x = offsetX; x < w; x += gridSize) {
@@ -2560,6 +2833,54 @@
       ctx.translate(cx + diagramState.panX, cy + diagramState.panY);
       ctx.scale(diagramState.zoom, diagramState.zoom);
 
+      // Draw Latency Distance Radar Rings centered on Gateway (0, 0)
+      const radarRings = [
+        { r: 95, label: '< 5ms' },
+        { r: 160, label: '5-20ms' },
+        { r: 230, label: '> 20ms' }
+      ];
+
+      for (const ring of radarRings) {
+        ctx.save();
+        ctx.strokeStyle = theme.ring;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 6]);
+        ctx.beginPath();
+        ctx.arc(0, 0, ring.r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = theme.ringLabel;
+        ctx.font = '9px ui-monospace, SFMono-Regular, monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(ring.label, ring.r + 4, -4);
+        ctx.restore();
+      }
+
+      // Draw Rotating Radar Scanner Beam
+      if (diagramState.physicsEnabled) {
+        ctx.save();
+        const sweepAngle = diagramState.orbitAngle * 1.5;
+        const sweepGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, 240);
+        sweepGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        sweepGrad.addColorStop(1, theme.radarSweep);
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, 240, sweepAngle - 0.25, sweepAngle);
+        ctx.closePath();
+        ctx.fillStyle = sweepGrad;
+        ctx.fill();
+
+        ctx.strokeStyle = theme.ring;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(sweepAngle) * 240, Math.sin(sweepAngle) * 240);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       const gwIP = `${state.subnetBase}.1`;
       const gwNode = diagramState.nodes.get(gwIP);
 
@@ -2572,7 +2893,7 @@
           node.y += (node.targetY - node.y) * 0.12;
 
           ctx.save();
-          ctx.strokeStyle = node.type === 'self' ? 'rgba(56, 189, 248, 0.45)' : 'rgba(16, 185, 129, 0.35)';
+          ctx.strokeStyle = node.type === 'self' ? theme.linkSelf : theme.linkHost;
           ctx.lineWidth = node.type === 'self' ? 2.5 : 1.5;
           ctx.setLineDash(node.type === 'self' ? [] : [4, 4]);
 
@@ -2621,8 +2942,8 @@
         ctx.shadowBlur = isHovered ? 20 : (isSelf ? 15 : 10);
 
         const grad = ctx.createRadialGradient(node.x, node.y, 2, node.x, node.y, node.radius);
-        grad.addColorStop(0, '#1e293b');
-        grad.addColorStop(1, '#0f172a');
+        grad.addColorStop(0, theme.nodeBgStart);
+        grad.addColorStop(1, theme.nodeBgEnd);
 
         ctx.fillStyle = grad;
         ctx.beginPath();
@@ -2674,6 +2995,14 @@
       }
 
       initDiagram();
+      // Restore Diagram Theme preference from localStorage
+      try {
+        const savedTheme = localStorage.getItem('ipscanner_theme') || 'neon';
+        setDiagramTheme(savedTheme);
+      } catch (e) {
+        setDiagramTheme('neon');
+      }
+
       if (window.location.protocol === 'https:') {
         const warning = document.getElementById('httpsWarning');
         if (warning) warning.style.display = 'flex';
