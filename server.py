@@ -9,8 +9,58 @@ import concurrent.futures
 import re
 import time
 import urllib.parse
+import threading
+import webbrowser
 
 PORT = 63210
+
+def get_resource_dir():
+    """Locate directory containing index.html (supports PyInstaller onefile bundle)."""
+    if getattr(sys, 'frozen', False):
+        # 1. Prefer external index.html if user placed one next to the executable
+        exe_dir = os.path.dirname(sys.executable)
+        if os.path.isfile(os.path.join(exe_dir, 'index.html')):
+            return exe_dir
+        # 2. Bundled assets in PyInstaller extraction temp dir
+        if hasattr(sys, '_MEIPASS'):
+            return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
+def free_stale_port(port):
+    """Cleanly terminate any orphaned process occupying the target port on Windows."""
+    if sys.platform != 'win32':
+        return
+    try:
+        output = subprocess.check_output(
+            f'netstat -aon | findstr ":{port} "',
+            shell=True,
+            text=True,
+            stderr=subprocess.DEVNULL
+        )
+        current_pid = os.getpid()
+        for line in output.splitlines():
+            parts = line.strip().split()
+            if len(parts) >= 5 and f':{port}' in parts[1]:
+                try:
+                    pid = int(parts[-1])
+                    if pid != 0 and pid != current_pid:
+                        subprocess.run(['taskkill', '/F', '/PID', str(pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        time.sleep(0.3)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+def open_browser(url, delay=0.8):
+    """Launch default browser in a background thread."""
+    def _open():
+        time.sleep(delay)
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+    t = threading.Thread(target=_open, daemon=True)
+    t.start()
 
 def get_local_ip():
     """Detect the active local LAN IPv4 address via outbound route inspection."""
@@ -115,6 +165,11 @@ def scan_subnet(subnet_base):
 class LocalScannerHTTPHandler(http.server.SimpleHTTPRequestHandler):
     """Static file handler extended with network discovery telemetry endpoint."""
 
+    def __init__(self, *args, directory=None, **kwargs):
+        if directory is None:
+            directory = get_resource_dir()
+        super().__init__(*args, directory=directory, **kwargs)
+
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
@@ -162,25 +217,48 @@ class LocalScannerHTTPHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(data)
 
 def run_server():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(script_dir)
+    resource_dir = get_resource_dir()
+    os.chdir(resource_dir)
+
+    free_stale_port(PORT)
 
     local_ip = get_local_ip()
-    print("=" * 60)
-    print("      LOCAL NETWORK IP SCANNER - BACKEND SERVER")
-    print("=" * 60)
-    print(f"[*] Detected Local Machine IP: {local_ip}")
-    print(f"[*] Subnet: {'.'.join(local_ip.split('.')[:3])}.0/24")
-    print(f"[*] Web Server URL: http://localhost:{PORT}")
-    print("=" * 60)
+    subnet = f"{'.'.join(local_ip.split('.')[:3])}.0/24"
+    url = f"http://localhost:{PORT}"
+
+    print("=" * 66)
+    print("      LAN RADAR - LOCAL NETWORK IP & TOPOLOGY SCANNER")
+    print("=" * 66)
+    print(f"[*] Detected Local Machine IP : {local_ip}")
+    print(f"[*] Local Subnet              : {subnet}")
+    print(f"[*] Web Server Address        : {url}")
+    print(f"[*] Serving Directory         : {resource_dir}")
+    print("=" * 66)
+    print("[*] Launching browser automatically...")
+    print("[*] Keep this window open while using the scanner.")
+    print("[*] Press Ctrl+C in this window to stop the server.")
+    print("=" * 66)
     sys.stdout.flush()
 
+    open_browser(url)
+
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(('0.0.0.0', PORT), LocalScannerHTTPHandler) as httpd:
-        try:
-            httpd.serve_forever()
-        except KeyboardInterrupt:
-            print("\nShutting down server.")
+    try:
+        httpd = socketserver.TCPServer(('0.0.0.0', PORT), LocalScannerHTTPHandler)
+    except OSError as e:
+        print(f"[!] Warning: Port {PORT} busy ({e}). Attempting fallback port...")
+        httpd = socketserver.TCPServer(('0.0.0.0', 0), LocalScannerHTTPHandler)
+        alt_port = httpd.server_address[1]
+        url = f"http://localhost:{alt_port}"
+        print(f"[*] Switched to alternate URL: {url}")
+        open_browser(url, delay=0.2)
+
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\n[*] Server shutdown requested by user. Exiting...")
+    finally:
+        httpd.server_close()
 
 if __name__ == '__main__':
     run_server()
