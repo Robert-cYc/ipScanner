@@ -12,6 +12,13 @@ import urllib.parse
 import threading
 import webbrowser
 
+# Ensure UTF-8 output encoding across Windows consoles and processes
+if sys.platform == 'win32':
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 PORT = 63210
 
 def get_resource_dir():
