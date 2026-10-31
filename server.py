@@ -247,7 +247,8 @@ def run_server():
     print("=" * 66)
     sys.stdout.flush()
 
-    open_browser(url)
+    if os.environ.get('NO_BROWSER') != '1' and '--no-browser' not in sys.argv:
+        open_browser(url)
 
     socketserver.TCPServer.allow_reuse_address = True
     try:

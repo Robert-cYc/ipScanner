@@ -26,7 +26,7 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":%PORT% "') do (
 where python >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     echo [OK] Python detected. Starting server.py on port %PORT%...
-    start "" "http://localhost:%PORT%"
+    if not "%NO_BROWSER%"=="1" start "" "http://localhost:%PORT%"
     python server.py
     goto :end
 )
@@ -35,7 +35,7 @@ if %ERRORLEVEL% EQU 0 (
 where node >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     echo [OK] Node.js detected. Launching via npx serve on port %PORT%...
-    start "" "http://localhost:%PORT%"
+    if not "%NO_BROWSER%"=="1" start "" "http://localhost:%PORT%"
     npx -y serve . -p %PORT%
     goto :end
 )
