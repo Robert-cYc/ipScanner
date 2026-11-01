@@ -227,11 +227,35 @@ def run_server():
     resource_dir = get_resource_dir()
     os.chdir(resource_dir)
 
-    free_stale_port(PORT)
+    preferred_port = int(os.environ.get('PORT', 63210))
+    active_port_file = os.path.join(resource_dir, '.active_port')
+
+    socketserver.TCPServer.allow_reuse_address = True
+    httpd = None
+    active_port = preferred_port
+
+    for attempt_port in range(preferred_port, preferred_port + 50):
+        try:
+            httpd = socketserver.TCPServer(('0.0.0.0', attempt_port), LocalScannerHTTPHandler)
+            active_port = attempt_port
+            break
+        except OSError as e:
+            print(f"[!] Warning: Port {attempt_port} occupied ({e}). Attempting fallback port {attempt_port + 1}...")
+            continue
+
+    if httpd is None:
+        httpd = socketserver.TCPServer(('0.0.0.0', 0), LocalScannerHTTPHandler)
+        active_port = httpd.server_address[1]
+
+    try:
+        with open(active_port_file, 'w', encoding='utf-8') as f:
+            f.write(str(active_port))
+    except Exception:
+        pass
 
     local_ip = get_local_ip()
     subnet = f"{'.'.join(local_ip.split('.')[:3])}.0/24"
-    url = f"http://localhost:{PORT}"
+    url = f"http://localhost:{active_port}"
 
     print("=" * 66)
     print("      LAN RADAR - LOCAL NETWORK IP & TOPOLOGY SCANNER")
@@ -241,7 +265,8 @@ def run_server():
     print(f"[*] Web Server Address        : {url}")
     print(f"[*] Serving Directory         : {resource_dir}")
     print("=" * 66)
-    print("[*] Launching browser automatically...")
+    if os.environ.get('NO_BROWSER') != '1' and '--no-browser' not in sys.argv:
+        print("[*] Launching browser automatically...")
     print("[*] Keep this window open while using the scanner.")
     print("[*] Press Ctrl+C in this window to stop the server.")
     print("=" * 66)
@@ -250,22 +275,16 @@ def run_server():
     if os.environ.get('NO_BROWSER') != '1' and '--no-browser' not in sys.argv:
         open_browser(url)
 
-    socketserver.TCPServer.allow_reuse_address = True
-    try:
-        httpd = socketserver.TCPServer(('0.0.0.0', PORT), LocalScannerHTTPHandler)
-    except OSError as e:
-        print(f"[!] Warning: Port {PORT} busy ({e}). Attempting fallback port...")
-        httpd = socketserver.TCPServer(('0.0.0.0', 0), LocalScannerHTTPHandler)
-        alt_port = httpd.server_address[1]
-        url = f"http://localhost:{alt_port}"
-        print(f"[*] Switched to alternate URL: {url}")
-        open_browser(url, delay=0.2)
-
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\n[*] Server shutdown requested by user. Exiting...")
     finally:
+        try:
+            if os.path.isfile(active_port_file):
+                os.remove(active_port_file)
+        except Exception:
+            pass
         httpd.server_close()
 
 if __name__ == '__main__':

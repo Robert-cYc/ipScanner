@@ -13,20 +13,13 @@ echo       Starting Local Network IP Scanner (LAN Radar)
 echo ========================================================
 echo.
 echo Directory: %~dp0
-echo Web Server: http://localhost:%PORT%
+echo Preferred Port: %PORT% (auto-resolves conflict)
 echo.
-
-:: Terminate any stale process currently occupying the port
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":%PORT% "') do (
-    echo Terminating stale process PID %%a on port %PORT%...
-    taskkill /F /PID %%a >nul 2>&1
-)
 
 :: Verify if Python is accessible
 where python >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    echo [OK] Python detected. Starting server.py on port %PORT%...
-    if not "%NO_BROWSER%"=="1" start "" "http://localhost:%PORT%"
+    echo [OK] Python detected. Starting server.py...
     python server.py
     goto :end
 )
