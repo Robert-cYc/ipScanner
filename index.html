@@ -522,8 +522,8 @@
     .diagram-wrapper {
       position: relative;
       width: 100%;
-      height: 520px;
-      min-height: 480px;
+      height: 380px;
+      min-height: 280px;
       background: #080d1a;
       border: 1px solid var(--card-border);
       border-radius: 10px;
@@ -1068,7 +1068,7 @@
 
         <!-- View Switcher Tabs -->
         <div class="view-tabs">
-          <button type="button" id="tabBtnDiagram" class="tab-btn active" onclick="switchView('diagram')">
+          <button type="button" id="tabBtnDiagram" class="tab-btn" onclick="switchView('diagram')">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
             <span data-i18n="tabDiagram">IP Network Diagram</span>
           </button>
@@ -1076,7 +1076,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
             <span data-i18n="tabHostTable">Host Table</span> (<span id="tabActiveCount">0</span>)
           </button>
-          <button type="button" id="tabBtnSplit" class="tab-btn" onclick="switchView('split')">
+          <button type="button" id="tabBtnSplit" class="tab-btn active" onclick="switchView('split')">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 3h8v18H3zm10 0h8v18h-8z"/></svg>
             <span data-i18n="tabSplitView">Split View</span>
           </button>
@@ -1141,7 +1141,7 @@
         </div>
 
         <!-- Table View -->
-        <div id="tableSection" class="table-responsive" style="flex: 1; max-height: 400px; overflow-y: auto; display: none;">
+        <div id="tableSection" class="table-responsive" style="flex: 1; max-height: 340px; overflow-y: auto; display: block;">
           <table>
             <thead>
               <tr>
@@ -2365,7 +2365,7 @@
     const diagramState = {
       canvas: null,
       ctx: null,
-      viewMode: 'diagram',
+      viewMode: 'split',
       currentTheme: 'neon',
       width: 0,
       height: 0,
@@ -2619,6 +2619,10 @@
 
     function switchView(mode) {
       diagramState.viewMode = mode;
+      try {
+        localStorage.setItem('ipscanner_view_mode', mode);
+      } catch (e) {}
+
       const diagBtn = document.getElementById('tabBtnDiagram');
       const tableBtn = document.getElementById('tabBtnTable');
       const splitBtn = document.getElementById('tabBtnSplit');
@@ -2633,6 +2637,7 @@
         diagBtn.classList.add('active');
         diagSec.style.display = 'block';
         diagSec.style.height = '520px';
+        diagSec.style.minHeight = '480px';
         tableSec.style.display = 'none';
       } else if (mode === 'table') {
         tableBtn.classList.add('active');
@@ -2642,9 +2647,10 @@
       } else if (mode === 'split') {
         splitBtn.classList.add('active');
         diagSec.style.display = 'block';
-        diagSec.style.height = '360px';
+        diagSec.style.height = '380px';
+        diagSec.style.minHeight = '280px';
         tableSec.style.display = 'block';
-        tableSec.style.maxHeight = '320px';
+        tableSec.style.maxHeight = '340px';
       }
 
       syncDiagramNodes();
@@ -2995,6 +3001,14 @@
       }
 
       initDiagram();
+
+      // Initialize View Mode (Default to Split View 'split')
+      try {
+        const savedView = localStorage.getItem('ipscanner_view_mode') || 'split';
+        switchView(savedView);
+      } catch (e) {
+        switchView('split');
+      }
       // Restore Diagram Theme preference from localStorage
       try {
         const savedTheme = localStorage.getItem('ipscanner_theme') || 'neon';
